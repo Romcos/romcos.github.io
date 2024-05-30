@@ -12,14 +12,18 @@ May 28th 2024
 - When the user clicks on a node, that is not a leaf, that nodes becomes orange and gets 2 leaves (in blue)
 
 May 29 2024
-- corrected bug with lca
-- 
+- Corrected bug with lca
+- Lets the user restart with arbitrary number of robots
+
+May 30th
+- Added the rules of the game
+- A little less bug with transitions
 
 
 TODOs
 - Correct bug with edges that remain red indefinitely (when there are many competing calls)
-- Let the user restart and choose the number of robots that are available initially 
 - Clever BFDN, where the loads over nodes are balanced
+- Implement more clever strategies than BFDN
 -->
 
 
@@ -27,11 +31,11 @@ TODOs
 <html lang="en">
 
 <head>
-    <!-- Include Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tree-Mining Game</title>
+    <!-- Include Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Include D3 -->
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
@@ -76,6 +80,36 @@ TODOs
             /*margin-top: 5px;*/
             /* Increased distance to the top */
         }
+
+        .overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 2em;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .overlay-content {
+            margin-top: 20%;
+        }
+
+        .rules-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            width: 60%;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -97,6 +131,26 @@ TODOs
     <div class="svg-container">
         <svg width="1000" height="600"></svg>
     </div>
+    <div class="rules-container">
+        <h5>Rules of the Game</h5>
+        <p>
+            This is the <strong>tree-mining game</strong>. Your <strong>goal</strong> is to have a score as large as
+            possible when one
+            of the leaves of the tree touches the other end of the screen.
+            When you click on a node that is populated by k robots, that node gets receives k-1 children with one robot
+            each. The extra robot is sent somewhere chosen by the algorithm.
+            Every the algorithm has to move a robot along an edge, your score gets increased by one. Beat the algorithm!
+            You get to pick the initial number of robots.
+        </p>
+    </div>
+    <div class="overlay">
+        <div class="overlay-content">
+            <p>That's it, you traversed the screen!</p>
+            <p>Your Score: <span id="finalScore"></span></p>
+            <button id="resume" class="btn btn-secondary">Resume Playing</button>
+            <button id="resume-restart" class="btn btn-secondary">Restart Game</button>
+        </div>
+    </div>
 
     <!-- Include Bootstrap JS and dependencies (optional) -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -106,12 +160,25 @@ TODOs
 
 
     <script>
+        function showOverlay() {
+            const score = document.getElementById("score").innerText;
+            document.getElementById("finalScore").innerText = score;
+            document.querySelector(".overlay").style.display = "flex";
+        }
+
+        function hideOverlay() {
+            document.querySelector(".overlay").style.display = "none";
+        }
+
 
 
         // Set the dimensions and margins of the diagram
         const margin = { top: 20, right: 90, bottom: 30, left: 90 },
             width = 1000 - margin.left - margin.right,
             height = 600 - margin.top - margin.bottom;
+
+        // Tells whether the resume button was pushed
+        var resumed = false;
 
         // Append the svg object to the body of the page
         const svg = d3.select("svg")
@@ -145,12 +212,26 @@ TODOs
             update(root);
             var scoreDiv = document.getElementById("score");
             scoreDiv.innerHTML = 0;
+            resumed = false;
         }
 
         // Event listener for the restart button
         document.getElementById("restart").addEventListener("click", () => {
             const numRobots = parseInt(document.getElementById("numRobots").value);
             initializeGame(numRobots);
+        });
+
+        // Event listener for the restart button
+        document.getElementById("resume-restart").addEventListener("click", () => {
+            const numRobots = parseInt(document.getElementById("numRobots").value);
+            hideOverlay();
+            initializeGame(numRobots);
+        });
+
+        // Event listener for the resume button
+        document.getElementById("resume").addEventListener("click", () => {
+            hideOverlay();
+            resumed = true;
         });
 
         // Initialize the game with the default number of robots
@@ -169,7 +250,6 @@ TODOs
         // Toggle children on click.
         function click(event, d) {
             if (d.data.active) {//only click on active nodes
-                console.log("clicked on active node")
                 d.data.active = false; // deactivates
                 //Create as many children as there are robots
                 for (let j = 0; j < d.data.robot - 1; j++) {
@@ -180,9 +260,6 @@ TODOs
                 d.data.robot = "";
                 update(d);
                 animateEdges(d, dest);//delayed by nearly 1 second
-            }
-            else {
-                console.log("clicked on inactive node")
             }
         }
 
@@ -260,23 +337,32 @@ TODOs
             // Animate each link one after the other
             links.forEach((d, i) => {
                 const link = svg.select(`#link-${d.id}`);
-                console.log(link)
+
+                // The animation part
                 link.transition()
                     .delay(800 + i * 100)//800: delay to let new tree and +i*100 gives sensation of slight consecutiveness
                     .duration(250)
                     .style("stroke", "red")
                     .style("stroke-width", 3)
                     .on("start", () => {
-                        increaseScore();
-                        console.log(`Paid for for link-${d.id}`)
-                    })
-                    .transition()
-                    .delay(500)
-                    .duration(250)
-                    .style("stroke", "#ccc")
-                    .style("stroke-width", 2);
+                        console.log(`Start transition to red link-${d.id}`)
+                    });
+                //The score increase part: this is because transitions will be interrupted by other transitions
+                setTimeout(() => {
+                    link.transition()
+                        .duration(250)
+                        .style("stroke", "#ccc")
+                        .style("stroke-width", 2).on("start", () => {
+                            console.log(`Start transition to grey link-${d.id}`)
+                        })
+                }, 500 + 800 + i * 100); // Same delay as the transition + extra delay to let edge red for 500 ms
+
+                //The score increase part: this is because transitions will be interrupted by other transitions
+                setTimeout(() => {
+                    increaseScore();
+                }, 800 + i * 100); // Same delay as the transition
+
             });
-            console.log(dest)
             const destNode = svg.select(`#node-${dest.id}`);
             const destText = destNode.select('text');
             destText.transition()
@@ -303,6 +389,10 @@ TODOs
             }
             else {
                 nodes.forEach(d => { d.y = width * d.depth / root.height; })
+                if (!resumed) {
+                    //the size of the screen was attained
+                    showOverlay()
+                }
             }
 
 
@@ -380,8 +470,6 @@ TODOs
                     const o = { x: source.x0, y: source.y0 };
                     return diagonal(o, o);
                 });
-
-            console.log("Link Enter Data:", linkEnter.data());
 
             // UPDATE
             const linkUpdate = linkEnter.merge(link);
