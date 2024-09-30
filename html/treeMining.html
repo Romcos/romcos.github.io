@@ -22,8 +22,10 @@ May 30th
 
 TODOs
 - Correct bug with edges that remain red indefinitely (when there are many competing calls)
+  - The bugs with transitions comes from the fact that any transition interrupts a previous transition. It is better practice to nest all transitions together (as much as possible) instead of having them in different places.
 - Clever BFDN, where the loads over nodes are balanced
 - Implement more clever strategies than BFDN
+- Create a concrete exploration algo, for instance resembling https://qiao.github.io/PathFinding.js/visual/ where the adversary picks the speeds of the robots at all times. 
 -->
 
 
