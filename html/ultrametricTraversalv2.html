@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultrametric Traversal</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .node {
+            stroke: black;
+            stroke-width: 1.5px;
+        }
+
+        .edge {
+            stroke: #999;
+            stroke-width: 1.5px;
+        }
+
+        .highlight {
+            stroke: red;
+            stroke-width: 3px;
+        }
+        .rules-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+            width: 60%;
+            text-align: center;
+        }
+        .svg-container {
+            border: 1px solid black;
+            /* Delimiter around the SVG */
+            border-radius: 15px;
+            /* Curved corners for the SVG */
+            overflow: hidden;
+            /* Ensures the corners are cut off */
+            margin-top: 10px;
+            /* Increased distance to the top */
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /*margin-top: 20px;*/
+            /* Increased distance to the top */
+        }
+        .overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            font-size: 2em;
+            text-align: center;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .overlay-content {
+            margin-top: 20%;
+        }
+    </style>
+</head>
+<body>
+<div class="rules-container">
+    <h2>Ultrametric Traversal</h2>
+    <h5>Rules of the Game</h5>
+    <p>
+        You are an <strong>agent</strong> (in green) similar to Mario. 
+        Your goal is to reach the last layer (depth 15) 
+        while traversing as few edges as possible. 
+        Your score at the end is the number of highlighted edges. Lower is better. Perfect score is 15!
+        <br><br>
+        <i>The tree is random and it does not depend on your decisions. Specifically, at each time, all nodes have the same chances of having children. </i>
+    </p>
+</div>
+<svg width="1000" height="800" class="svg-container"></svg>
+<p>Score: <span id="score">0</span></p>
+
+<div class="overlay">
+    <div class="overlay-content">
+        <p>That's it!</p>
+        <p>Your Score: <span id="printScore"></span></p>
+        <!-- <button id="resume-restart" class="btn btn-secondary">Restart Game</button> -->
+    </div>
+</div>
+
+
+<script>
+        function showOverlay() {
+            const score = document.getElementById("score").innerText;
+            document.getElementById("printScore").innerText = score;
+            document.querySelector(".overlay").style.display = "flex";
+        }
+
+        function hideOverlay() {
+            document.querySelector(".overlay").style.display = "none";
+        }
+
+
+    const width = 5;
+    const depth = 15;
+    let tree = {nodes: [], edges: []};
+    let nodeId = 0;
+    let layers = [];
+    let agentNode = null;
+    let currentLayer = 0;
+    let score = 0;
+
+    function createTree(width, depth) {
+        let root = {id: nodeId++, depth: 0, parent: null};
+        tree.nodes.push(root);
+        layers.push([root]);
+
+        for (let d = 1; d <= depth; d++) {
+            let layer = [];
+            for (let i = 0; i < width; i++) {
+                let parent = layers[d - 1][Math.floor(Math.random() * layers[d - 1].length)];
+                let node = {id: nodeId++, depth: d, parent: parent.id};
+                tree.nodes.push(node);
+                tree.edges.push({source: parent.id, target: node.id, depthParent:parent.depth});
+                layer.push(node);
+            }
+            layers.push(layer);
+        }
+    }
+
+    createTree(width, depth);
+
+    function buildHierarchy(nodes) {
+        let nodeMap = new Map();
+        nodes.forEach(n => nodeMap.set(n.id, {...n, children: []}));
+        let root = null;
+        nodes.forEach(n => {
+            if (n.parent == null) {
+                root = nodeMap.get(n.id);
+            } else {
+                nodeMap.get(n.parent).children.push(nodeMap.get(n.id));
+            }
+        });
+        return root;
+    }
+
+    const svg = d3.select("svg");
+    const nodeRadius = 15;
+    let edgeGroup = svg.append("g");
+    let nodeGroup = svg.append("g");
+    let nodeMap = {};
+
+    function layoutAndRender() {
+        const rootHierarchy = d3.hierarchy(buildHierarchy(tree.nodes));
+        const treeLayout = d3.tree().size([800, 700]);
+        treeLayout(rootHierarchy);
+
+        nodeMap = {};
+        rootHierarchy.descendants().forEach(d => {
+            let data = d.data;
+            data.x = d.x + 100;
+            data.y = d.y + 50;
+            nodeMap[data.id] = data;
+        });
+
+        let edges = edgeGroup.selectAll("line").data(tree.edges, d => d.source + "-" + d.target);
+        edges.join(
+            enter => enter.append("line")
+                .attr("class", "edge")
+                .attr("x1", d => nodeMap[d.source].x)
+                .attr("y1", d => nodeMap[d.source].y)
+                .attr("x2", d => nodeMap[d.target].x)
+                .attr("y2", d => nodeMap[d.target].y),
+            update => update.transition().duration(500)
+                .attr("x1", d => nodeMap[d.source].x)
+                .attr("y1", d => nodeMap[d.source].y)
+                .attr("x2", d => nodeMap[d.target].x)
+                .attr("y2", d => nodeMap[d.target].y)
+        );
+
+        let nodes = nodeGroup.selectAll("circle").data(tree.nodes, d => d.id);
+        nodes.join(
+            enter => enter.append("circle")
+                .attr("class", "node")
+                .attr("r", nodeRadius)
+                .attr("cx", d => nodeMap[d.id].x)
+                .attr("cy", d => nodeMap[d.id].y)
+                .style("fill", d => d.depth === 0 ? "green" : "none")
+                .style("visibility", d => d.depth <=1 ? "visible" : "hidden") // hides all nodes that are at depth more than 0
+                .on("click", handleNodeClick),
+            update => update.transition().duration(500)
+                .attr("cx", d => nodeMap[d.id].x)
+                .attr("cy", d => nodeMap[d.id].y)
+        );
+    }
+
+    function updateGraph() {
+        edgeGroup.selectAll("line")
+            .transition()
+            .duration(500)
+            .style("fill", d => {
+                if (d.depthParent === 0) return "green";
+                return "black";
+            })
+            .style("visibility",d => {
+                if (d.depthParent<=agentNode.depth) return "visible";
+                return "hidden";
+            });
+
+        nodeGroup.selectAll("circle")
+            .transition()
+            .duration(500)
+            .style("visibility",d => {
+                if (d.depth <= currentLayer) return "visible";
+                return "hidden";
+            })
+            .style("fill", d => {
+                if (d.id === agentNode.id) return "green";
+                if (d.depth < currentLayer) return "yellow";
+                if (d.depth === currentLayer) return "blue";
+                return "none";
+            });
+        
+        if (currentLayer==depth+1){
+            setTimeout(() => {  showOverlay(); }, 1000);
+        }
+        //layoutAndRender(); // teh fact that layout render was called was overwriting the node colors!!
+    }
+
+    function getLcaBetween(to, from) {
+        let ancestors = new Set();
+        
+        // Collect all ancestors of `from` including itself
+        let current = from;
+        while (current) {
+            ancestors.add(current.id);
+            current = nodeMap[current.parent];
+        }
+        
+        // Traverse ancestors of `to` until one is found in `from` ancestors
+        current = to;
+        while (current) {
+            if (ancestors.has(current.id)) {
+                return current;  // This is the LCA
+            }
+            current = nodeMap[current.parent];
+        }
+        
+        // No common ancestor found
+        return null;
+    }
+
+
+    function getPathBetween(from, to) {
+        let lca = getLcaBetween(to, from);
+        if (!lca) return null;
+
+        let fromPath = [];
+        let current = from;
+        while (current.id !== lca.id) {
+            fromPath.push(current);
+            current = nodeMap[current.parent];
+        }
+        
+        let toPath = [];
+        current = to;
+        while (current.id !== lca.id) {
+            toPath.push(current);
+            current = nodeMap[current.parent];
+        }
+        toPath.reverse();
+
+        return fromPath.concat([lca]).concat(toPath);
+    }
+
+
+    function handleNodeClick(event, d) {//d is the data that is binded to the event adn event.currentTarget is the DOM element
+        if (d.depth !== currentLayer) return;
+        d3.select(event.currentTarget).style("fill", "orange");
+
+        const path = getPathBetween(agentNode, d);
+        if (!path) return;
+
+        highlightPath(path);
+        score += path.length - 1;
+        document.getElementById("score").innerText = score;
+        agentNode = d;
+        currentLayer++;
+        setTimeout(updateGraph, 1000);
+    }
+
+    function highlightPath(path) {
+        const pathEdges = [];
+        for (let i = 0; i < path.length - 1; i++) {
+            pathEdges.push({source: path[i].id, target: path[i + 1].id});
+        }
+
+        const lines = edgeGroup.selectAll("line");
+        lines.classed("highlight", false);
+
+        pathEdges.forEach(pe => {
+            lines.filter(d => (d.source === pe.source && d.target === pe.target) || (d.source === pe.target && d.target === pe.source))
+                .classed("highlight", true);
+        });
+
+        setTimeout(() => lines.classed("highlight", false), 1000);
+    }
+
+    agentNode = layers[0][0];
+    currentLayer = 1;
+    layoutAndRender();
+    updateGraph();
+</script>
+</body>
+</html>

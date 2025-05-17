@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ultrametric Traversal</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        .node {
+            stroke: black;
+            stroke-width: 1.5px;
+        }
+
+        .edge {
+            stroke: #999;
+            stroke-width: 1.5px;
+        }
+
+        .highlight {
+            stroke: red;
+            stroke-width: 3px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<h2>Ultrametric Traversal</h2>
+<svg width="1000" height="800"></svg>
+<p>Score: <span id="score">0</span></p>
+<script>
+    const width = 5;
+    const depth = 15;
+    let tree = {nodes: [], edges: []};
+    let nodeId = 0;
+    let layers = [];
+    let agentNode = null;
+    let currentLayer = 0;
+    let score = 0;
+    const layerHeight = 50;
+
+    function createTree(width, depth) {
+        let root = {id: nodeId++, depth: 0, parent: null};
+        tree.nodes.push(root);
+        layers.push([root]);
+
+        for (let d = 1; d <= depth; d++) {
+            let layer = [];
+            for (let i = 0; i < width; i++) {
+                let parent = layers[d - 1][Math.floor(Math.random() * layers[d - 1].length)];
+                let node = {id: nodeId++, depth: d, parent: parent.id};
+                tree.nodes.push(node);
+                tree.edges.push({source: parent.id, target: node.id});
+                layer.push(node);
+            }
+            layers.push(layer);
+        }
+    }
+
+    createTree(width, depth);
+
+    function buildHierarchy(visibleNodes) {
+        let nodeMap = new Map();
+        visibleNodes.forEach(n => nodeMap.set(n.id, {...n, children: []}));
+        let root = null;
+        visibleNodes.forEach(n => {
+            if (n.parent == null) {
+                root = nodeMap.get(n.id);
+            } else if (nodeMap.has(n.parent)) {
+                nodeMap.get(n.parent).children.push(nodeMap.get(n.id));
+            }
+        });
+        return root;
+    }
+
+    const svg = d3.select("svg");
+    const nodeRadius = 15;
+    let edgeGroup = svg.append("g");
+    let nodeGroup = svg.append("g");
+    let nodeMap = {};
+
+    function layoutAndRender() {
+        const visibleNodes = tree.nodes.filter(d => d.depth <= currentLayer);
+        const visibleEdges = tree.edges.filter(e => {
+            let s = tree.nodes.find(n => n.id === e.source);
+            let t = tree.nodes.find(n => n.id === e.target);
+            return s.depth <= currentLayer && t.depth <= currentLayer;
+        });
+
+        const rootHierarchy = d3.hierarchy(buildHierarchy(visibleNodes));
+        const treeLayout = d3.tree().nodeSize([40, 100]);
+        treeLayout(rootHierarchy);
+
+        nodeMap = {};
+        rootHierarchy.descendants().forEach(d => {
+            let data = d.data;
+            data.x = d.x + 100;
+            data.y = data.depth * layerHeight + 50;
+            nodeMap[data.id] = data;
+        });
+
+        let edges = edgeGroup.selectAll("line").data(visibleEdges, d => d.source + "-" + d.target);
+        edges.join(
+            enter => enter.append("line")
+                .attr("class", "edge")
+                .attr("x1", d => nodeMap[d.source].x)
+                .attr("y1", d => nodeMap[d.source].y)
+                .attr("x2", d => nodeMap[d.target].x)
+                .attr("y2", d => nodeMap[d.target].y),
+            update => update.transition().duration(500)
+                .attr("x1", d => nodeMap[d.source].x)
+                .attr("y1", d => nodeMap[d.source].y)
+                .attr("x2", d => nodeMap[d.target].x)
+                .attr("y2", d => nodeMap[d.target].y),
+            exit => exit.remove()
+        );
+
+        let nodes = nodeGroup.selectAll("circle").data(visibleNodes, d => d.id);
+        nodes.join(
+            enter => enter.append("circle")
+                .attr("class", "node")
+                .attr("r", nodeRadius)
+                .attr("cx", d => nodeMap[d.id].x)
+                .attr("cy", d => nodeMap[d.id].y)
+                .style("fill", d => getNodeColor(d))
+                .on("click", handleNodeClick),
+            update => update.transition().duration(500)
+                .attr("cx", d => nodeMap[d.id].x)
+                .attr("cy", d => nodeMap[d.id].y)
+                .style("fill", d => getNodeColor(d)),
+            exit => exit.remove()
+        );
+    }
+
+    function getNodeColor(d) {
+        if (d.depth > currentLayer) return "none";
+        if (d.id === agentNode.id) return "green";
+        if (d.depth === currentLayer) return "blue";
+        return "yellow";
+    }
+
+    function updateGraph() {
+        layoutAndRender();
+        d3.selectAll("circle")
+            .transition()
+            .duration(500)
+            .style("fill", d => getNodeColor(d));
+    }
+
+    function getPathBetween(from, to) {
+        let path = [];
+        let ancestors = new Set();
+        let current = from;
+        while (current) {
+            ancestors.add(current.id);
+            current = nodeMap[current.parent];
+        }
+
+        current = to;
+        let toPath = [];
+        while (current && !ancestors.has(current.id)) {
+            toPath.push(current);
+            current = nodeMap[current.parent];
+        }
+
+        if (!current) return null;
+        let lca = current;
+
+        let fromPath = [];
+        current = from;
+        while (current.id !== lca.id) {
+            fromPath.push(current);
+            current = nodeMap[current.parent];
+        }
+
+        path = fromPath.reverse().concat([lca]).concat(toPath);
+        return path;
+    }
+
+    function handleNodeClick(event, d) {
+        if (d.depth !== currentLayer) return;
+
+        const path = getPathBetween(agentNode, d);
+        if (!path) return;
+
+        highlightPath(path);
+        score += path.length - 1;
+        document.getElementById("score").innerText = score;
+        agentNode = d;
+        currentLayer++;
+        setTimeout(updateGraph, 2000);
+    }
+
+    function highlightPath(path) {
+        const pathEdges = [];
+        for (let i = 0; i < path.length - 1; i++) {
+            pathEdges.push({source: path[i].id, target: path[i + 1].id});
+        }
+
+        const lines = edgeGroup.selectAll("line");
+        lines.classed("highlight", false);
+
+        pathEdges.forEach(pe => {
+            lines.filter(d => (d.source === pe.source && d.target === pe.target) || (d.source === pe.target && d.target === pe.source))
+                .classed("highlight", true);
+        });
+
+        setTimeout(() => lines.classed("highlight", false), 2000);
+    }
+
+    agentNode = layers[0][0];
+    currentLayer = 1;
+    layoutAndRender();
+</script>
+</body>
+</html>
