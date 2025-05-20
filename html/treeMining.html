@@ -132,27 +132,25 @@ TODOs
     </div>
     <div class="svg-container">
         <svg width="1000" height="600"></svg>
+        <div class="overlay">
+            <div class="overlay-content">
+                <p>That's it, you traversed the screen!</p>
+                <p>Your Score: <span id="finalScore"></span></p>
+                <button id="resume" class="btn btn-secondary">Resume Playing</button>
+                <!--<button id="resume-restart" class="location.reload()" onclick="location.reload()">Restart Game</button>-->
+            </div>
+        </div>
     </div>
     <div class="rules-container">
         <h5>Rules of the Game</h5>
         <p>
-            This is the <strong>tree-mining game</strong>. Your <strong>goal</strong> is to have a score as large as
-            possible when one
-            of the leaves of the tree touches the other end of the screen.
-            When you click on a node that is populated by k robots, that node gets receives k-1 children with one robot
+            When you <strong>click on a node</strong> that is populated by k robots, that node gets receives k-1
+            children with one robot
             each. The extra robot is sent somewhere chosen by the algorithm.
-            Every the algorithm has to move a robot along an edge, your score gets increased by one. Beat the algorithm!
-            You get to pick the initial number of robots.
+            The algorithm pays you 1 to traverse each edge. Beat the algorithm, but having the largest score.
         </p>
     </div>
-    <div class="overlay">
-        <div class="overlay-content">
-            <p>That's it, you traversed the screen!</p>
-            <p>Your Score: <span id="finalScore"></span></p>
-            <button id="resume" class="btn btn-secondary">Resume Playing</button>
-            <button id="resume-restart" class="btn btn-secondary">Restart Game</button>
-        </div>
-    </div>
+
 
     <!-- Include Bootstrap JS and dependencies (optional) -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -220,13 +218,6 @@ TODOs
         // Event listener for the restart button
         document.getElementById("restart").addEventListener("click", () => {
             const numRobots = parseInt(document.getElementById("numRobots").value);
-            initializeGame(numRobots);
-        });
-
-        // Event listener for the restart button
-        document.getElementById("resume-restart").addEventListener("click", () => {
-            const numRobots = parseInt(document.getElementById("numRobots").value);
-            hideOverlay();
             initializeGame(numRobots);
         });
 
