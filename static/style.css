@@ -3,6 +3,9 @@ body {
     font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
     padding-bottom: 8px;
     margin: 5%;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #212529;
 }
 
 @media screen and (min-width: 768px) {
@@ -17,8 +20,76 @@ body {
     }
 }
 
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
 
 .container {
     padding: 0 20px;
     text-align: center;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    text-align: justify;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 500;
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+/* Sizes based on Bootstrap 4 */
+h1 {
+    font-size: 2.5rem;
+    /* 40px */
+}
+
+h2 {
+    font-size: 2rem;
+    /* 32px */
+}
+
+h3 {
+    font-size: 1.75rem;
+    /* 28px */
+}
+
+h4 {
+    font-size: 1.5rem;
+    /* 24px */
+}
+
+h5 {
+    font-size: 1.25rem;
+    /* 20px */
+}
+
+h6 {
+    font-size: 1rem;
+    /* 16px */
+}
+
+/*horizontal line*/
+hr {
+    margin: 1rem 0;
+    /* vertical spacing */
+    border: 0;
+    /* removes default border */
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    /* thin light gray line */
 }
