@@ -1,0 +1,25 @@
+graph EasyTSP {
+    // Graph attributes
+    //size="10,10";    // Size of the layout
+    //ratio=fill;      // Aspect ratio
+    nodesep=1.0;     // Node separation
+    ranksep=2.0;     // Rank separation
+    rankdir=LR;      // Layout direction (Left to Right)
+
+    // Node attributes
+    node [shape=circle, fontsize=36, width=0.5, height=0.5];
+
+    // Edge attributes
+    edge [fontsize=36];
+
+    A -- B [label="5"];
+    A -- C [label="4"];
+    A -- D [label="7"];
+    A -- E [label="8"];
+    B -- C [label="2"];
+    B -- E [label="18"];
+    B -- D [label="23"];
+    C -- D [label="11"];
+    C -- E [label="25"];
+    D -- E [label="27"];
+}
