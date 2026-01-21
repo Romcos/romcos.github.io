@@ -57,14 +57,15 @@ class: slide
 
 .bottom-left[&#169; J. Klukowska CC-BY-SA. (mod. R.C.)]
 
+
 ---
 template: section
 
-# The Course
+# Course Syllabus
 
 ---
 template: slide
-## The Instructional Stuff
+## The team
 
 __Instructor:__
 
@@ -107,9 +108,72 @@ __Tutors?__
 we discuss in class
  - there are recommendations on the syllabus - you can access them in digital format through NYU libraries with no extra fees
   
+---
 
+## Background (CS 101)
 
+This is a challenging course that builds on concepts learned in CSCI.UA 101 (Introduction to computer science). You need to be familiar with:
 
+- Programming basics in Java (variables, data types, methods, classes, objects, etc.)
+
+--
+
+- Control flow constructs (if, for, while, switch, etc.)
+
+--
+
+- Object-oriented programming concepts (classes, objects, inheritance, polymorphism, encapsulation, etc.)
+
+--
+
+- Running, compiling, and debugging Java programs
+
+--
+
+- Basic algorithms (searching, recursion, etc.)
+
+--
+
+We will do a quick review of some of these concepts (week 1 and 2), and the rest of the class will build on them.
+---
+
+template: section
+
+# How to succeed?
+
+---
+
+## Tips for the Course
+
+- __Understand the concepts and reasons for doing things__. Do not memorize things if you do not
+know what they are doing. Question things! Be curious!
+
+--
+
+- __Use pen and paper__ (or the modern equivalents). Draw things out and experiment with the ideas. It often helps to
+draw out variables and objects of a piece of code that you are analyzing and update the picture as you go through
+the code. This type of hand-eye interaction stimulates different parts of your brain and helps you learn!
+
+--
+
+- __Try solving problems yourself__. I mean really work them out BEFORE asking for a solution,
+looking at a solution posted by others or trying to search the web/LLM.
+
+--
+
+- __Write code solutions yourself__. Don't copy and paste, type code yourself and then compare it to the code we
+wrote in class or the code that is in a book.
+
+--
+
+- __Treat mistakes and bugs as your friends__. The more problems you encounter, the easier it is to
+recognize them in the future. 
+
+--
+
+- __Make friends__. Make sure that you meet at least a few other people in the class and get to
+know them. These friendships will benefit you and other people in the class, and, in some case, may
+last a lifetime.
 
 
 
@@ -120,10 +184,8 @@ template:poll
 
 
 
-- go to http://pollev.com/joannakl
-- enter a word (or more) to answer the question above <br>
-  NOTE: if you enter a phrase consisting of multiple words, the words will be
-  used individually
+- go to https://pollev.com/cosson
+- enter a word (or more) to answer the question above 
 
 
 
@@ -137,10 +199,9 @@ template:slide
 
 
 A __data structure__ is a collection of data items in a memory of a running program that
-are organized in some fashion that allows items to be stored and retrieved by some fixed methods. 
+are organized in some fashion and that are accessed/modified by some fixed methods. 
 
-An __algorithm__ is a logical sequence of discrete steps that describes a complete solution
-to a given problem commutable in a finite amount of time and space.
+An __algorithm__ is a sequence of instructions computable in a finite amount of time and space.
 
 
 --
@@ -149,7 +210,8 @@ to a given problem commutable in a finite amount of time and space.
 Examples of data structures from CSCI.UA 101:
 - __array__: data items are stored one after another in memory and they can be accessed by
 their index number,
-- __stack__: collection of items with access (add/remove operations) only at the _top_ of the stack (think of a stack of plates).
+
+- __stack__: collection of items with access (add/remove) only at the _top_ of the stack.
 ]
 
 .right-column2[
@@ -169,6 +231,7 @@ Data structures covered in CSCI.UA 102:
 .left-column2[
 Examples of algorithms from CSCI.UA 101:
 - __maximum:__ computing the maximum of an __array__
+
 - __reverse:__ reversing the elements of a __stack__
 ]
 
@@ -185,21 +248,7 @@ template:slide
 ## Understanding Is Fundamental
 ### .purple[AI Can’t Learn for You]
 
-AI can generate code, but it can’t **teach you what the code means**.
-
-If you don’t understand *why* a hash table is faster than a linked list for lookups, or what causes a binary search tree to degrade to a linked list, you won’t be able to:
-
-- Debug it when something breaks  
-
-- Adapt it to a new use case  
-
-- Choose the right data structure for the problem  
-
----
-
-## Coding Is Thinking Through the Problem At Hand
-
-**Programming is not just typing - it is thinking.**
+AI can generate code, but only your personal intellectual effort can **teach you what the code means**.
 
 --
 
@@ -211,11 +260,28 @@ When you write code yourself, you practice:
 
 - Translating ideas into logic and syntax  
 
+--
+
 These skills are central to **software design, algorithms, systems, and research**.
 
 --
 
 These skills are also central to **instructing AI to code solutions to more complex problems**.
+
+- Debug code when something breaks  
+
+- Adapt code to a new use case  
+
+- Choose the right data structure for a new problem  
+
+--
+
+My advice: __Use AI to help you learn, but do not copy-paste code to solve homeworks.__
+
+--
+
+More generally, don’t skip **building core skills**. **Do not ask AI to complete tasks that you would not be able to complete on your own.**
+
 
 ---
 
@@ -259,12 +325,6 @@ Understanding data structures and basics of programming languages unlocks:
 
 - ... and many more 
 
-Without this foundation, your learning and career options will be limited.
-
---
-
-**After all, AI can do the basic things, and someone with the above skills will need to implement AI systems of tomorrow.** 
-
 ---
 
 ##  Employers and Interviews Expect It
@@ -280,23 +340,6 @@ Many technical interviews still require:
 **In real jobs, you’ll often need to build custom solutions—not just copy-paste from AI. That's because these solutions may be
 new and unique to a given situation and the AI does not _know_ about them yet.**
 
----
-
-## AI Is a Great Assistant, Not a Replacement
-
-AI helps most **when you already understand the problem**.
-
-Think of it like a calculator in math:
-> It’s powerful, but useless if you don’t know what formula to apply.
-
-Use AI to:
-- Get feedback and ideas 
- 
-- Explore alternatives  
-
-- Speed up boilerplate coding (but only once you know how to code it with ease)
-
-But don’t skip **building core skills**. **Do not ask AI to complete tasks that you would not be able to complete on your own.**
 
 ---
 
@@ -332,16 +375,15 @@ name: demo1a
 
 ## Demo 1: Create a string with lots of 'a's.
 
-.left-column2-larger[
+.left-column2-larger[ 
+.smaller[
 ```Java
 String generateAString1(int number) {
-    //Declare and instantiate variable result of type String
+    // Declare and instantiate variable to hold result
     String result = "";
-    //For loop
+    //Loop
     for (int i = 0; i < number; i++) {
-        //instantiates new String containing 
-        //the concatenation of result and "a"
-        //then reassign reference variable result
+        // concatenate
         result += "a"; 
     }
     return result;
@@ -350,20 +392,24 @@ String generateAString1(int number) {
 
 ```Java
 String generateAString2(int number) {
-    //Use a custom class (data structure) 
-    //that handles efficient concatenation
+    // Declare and instantiate variable to hold result
     StringBuilder sb = new StringBuilder();
+    // Loop
     for (int i = 0; i < number; i++) {
+        // Concatenate
         sb.append('a');
     }
     return sb.toString();
 }
 ```
 ]
+]
 
 .right-column2-smaller[
 
-- In this program we want to create a chain of characters (String) with a given (as input) number of "a".
+- We want to create a chain of characters (String) with a given (as input) number of "a".
+
+- Which program is faster? https://pollev.com/cosson
 ]
 ---
 template: demo1a
@@ -371,21 +417,21 @@ name: demo1b
 
 .right-column2-smaller[
 
-- When `number` is set to 500,000:
-    - the first function takes about __20,000 milliseconds__ (i.e., about 20 seconds) to execute
-    - the second function takes only __~2.5 milliseconds__ (i.e., you do not even notice that any time passed)
+- When `number` = 500,000:
+    - the first function takes about __20 seconds__ 
+    - the second function takes only __2.5 milliseconds__
 
 ]
 
 --
 
-.purple[.big[Why such a big difference? ]]
+
 
 --
 
 .below-column2[
 
-
+.purple[Why such a big difference?]
 - one needs to look at _how_ the `String` and `StringBuilder` classes are implemented
 - and to understand what data structures and algorithms each class uses
 
@@ -397,14 +443,16 @@ name: demo1b
 ## Demo 2: Iterating over a list of numbers
 
 
-.left-column2-large[
+.left-column2-larger[
+.smaller[
+
 ```Java
-LinkedList<Integer> doubleList1(LinkedList<Integer> numbers){
-    //Declare and instantiate list that will contain the result
-    LinkedList<Integer> twiceNumbers = new LinkedList<>();
-    //For loop (via indices)
+List<Integer> doubleList1(List<Integer> numbers){
+    // Instantiate list for result
+    List<Integer> twiceNumbers = new List<>();
+    // Loop 
     for (int i = 0; i < numbers.size; i++) {
-        //Get the i-th element of the original list and add it
+        // Compute i-th element
         twiceNumbers.addLast(numbers.get(i) * 2 );
     return twiceNumbers;
 }
@@ -415,39 +463,40 @@ LinkedList<Integer> doubleList1(LinkedList<Integer> numbers){
 
 ```Java
 
-LinkedList<Integer> doubleList2(LinkedList<Integer> numbers){
-    //Declare and instantiate list that will contain the result
-    LinkedList<Integer> twiceNumbers = new LinkedList<>();
-    //For loop (via elements)
+List<Integer> doubleList2(List<Integer> numbers){
+    // Instantiate list for result
+    List<Integer> twiceNumbers = new List<>();
+    // Loop 
     for (int num : numbers ) {
+        // Compute i-th element
         twiceNumbers.addLast( num * 2 );
     }
     return twiceNumbers;
+}
 ```
+]
 ]
 
 
-.right-column2-small[
+.right-column2-smaller[
 
-In this program we have a list of numbers. We want to iterate over the list, double each number
-and add it to a new list.
+- The program doubles all elements in a list of integers.
 
-What is the difference between these two loops?
-
-----
-
-{{content}}
+- Which program is faster? https://pollev.com/cosson
 
 ]
 
 --
 
-When `size` is set to 100,000 program 1 takes __3,391 milliseconds__ to execute
+When `size` = 100,000 program 1 takes __4 seconds__ to execute
 and program 2 finishes in __~4 milliseconds__.
 
 --
 
-- Would there be a difference in runtime if the datastructure was an __array__ of integers? 
+.left-column2-large[
+
+- __Question:__ Would there be a difference in runtime if the datastructure was an __array__ of integers? https://pollev.com/cosson
+]
 
 ---
 ## Demo 3: Calculating Fibonacci Numbers
@@ -505,6 +554,12 @@ public static long fibonacci2 (
 --
 
 .smaller[
+- Which program is faster? https://pollev.com/cosson
+]
+
+--
+
+.smaller[
 - When we try to compute the 40<sup>th</sup> Fibonacci number:
     - the code on the left takes __430 milliseconds__
     - the code on the right takes __~0.003 milliseconds__
@@ -513,46 +568,10 @@ public static long fibonacci2 (
 ]
 ---
 
-## Technical Interviews
-
-And if Linus Torvalds <!--, Douglas Crockford--> and my demos did not convince you that understanding data
-structures is important and exciting, there are always technical job interviews:
-
---
-
-- most technical interview questions are based on data structures and algorithms
-
-- examples:
-    - design a min-stack that performs typical stack operations and is able to
-    retrieve the smallest element at any time quickly
-    - describe an algorithm that can parse through a mathematical expression and
-    validate if all brackets and parenthesis are in a correct order and matched
-    - find all anagrams of a given string that are also words in the given dictionary
-    - determine if a given binary tree is a search tree
---
-
-- why?
---
-
-.left-column2[
-    - because for a software developer / programmer / computer scientist data structures
-    and algorithms are essential tools (just like a wrench is for a plumber;
-  would you hire a plumber without a proper toolbox? )
-]
-.right-column2[
-<figure style="margin:-3em 0 0 0;">
-<img  width="300" alt="Plumber in a green uniform working on a sink. (This was an official US Government [EPA] produced image officially released by the institution as part of their kid's outreach program, so it is public domain.) "
- src="https://openclipart.org/image/800px/195900">  </img>
-.small[<figcaption markdown="1"> Plumber in a green uniform working on a sink. (official US Government [EPA] produced image, public domain.) Source: https://openclipart.org/detail/195900/friendly-plumber <figcaption markdown="1">]
-</figure>
-]
-
-
----
 template: breakout
 
 
-### Group Discussion: Why do we care so much about programs being fast?
+### Group Discussion (5 minutes): Why do we care so much about programs being fast?
 
 - Turn to the people around you and introduce yourself. 
 
@@ -564,8 +583,7 @@ is important for the programs to run fast.
     - why is it beneficial to the **society** if the programs run fast?
 (this one is a bit more challenging)
 
-- After ~5 minutes, some groups will get a chance to report on what
-they came up with.
+
 
 
 <!--
@@ -575,50 +593,9 @@ Pick a Group to Report</button>
 <p id="volunteer"></p>
 -->
 
----
 
-template: section
 
-# How to succeed?
 
----
-
-## Tips for the Course
-
-- __Understand the concepts and reasons for doing things__. Do not memorize things if you do not
-know what they are doing. Question things! Be curious!
-
---
-
-- __Use pen and paper__ (or the modern equivalents). Draw things out and experiment with the ideas. It often helps to
-draw out variables and objects of a piece of code that you are analyzing and update the picture as you go through
-the code. This type of hand-eye interaction stimulates different parts of your brain and helps you learn!
-
---
-
-- __Try solving problems yourself__. I mean really work them out BEFORE asking for a solution,
-looking at a solution posted by others or trying to search the web/LLM.
-
---
-
-- __Write code solutions yourself__. Don't copy and paste, type code yourself and then compare it to the code we
-wrote in class or the code that is in a book.
-
---
-
-- __Treat mistakes and bugs as your friends__. The more problems you encounter, the easier it is to
-recognize them in the future. 
-
---
-
-- __Make friends__. Make sure that you meet at least a few other people in the class and get to
-know them. These friendships will benefit you and other people in the class, and, in some case, may
-last a lifetime.
-
----
-template: section
-
-# Course Syllabus
 
 
 
