@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Recursion</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## Recursion
+
+.author[
+Instructor: Romain Cosson <br><br><br>
+]
+
+.license[
+Copyright 2020 J Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; J. Klukowska. (mod. RC) CC-BY-SA.]
+
+---
+
+template: section
+
+# Introduction
+
+---
+
+template: slide
+
+## What is Recursion?
+
+The main idea of recursion is to solve a large problem by reducing it to smaller
+and smaller version of itself and then finally solve a trivial problem.
+
+- The step of solving a trivial problem is called a __base case__.
+
+- The step of reducing the problem is called a __recursive call__.
+
+- When caller receives the result of the recursive call from the callee, it uses
+that result to calculate its own _response_ (usually by performing some simple
+operation).
+  - __caller__ is the function instance that makes the recursive call
+  - __callee__ is the function instance that is called by the caller
+
+--
+
+__Any problem that can be solved recursively, can also be solved iteratively and vice versa.__
+
+- some algorithms are easier to state in one way or another
+- recursive implementations involve an __overhead of a function call__ and recursive implementations
+tend to be somewhat slower than corresponding iterative implementations
+
+--
+
+__Note that recursion (aka induction) can also be used as a mathematical proof technique.__
+
+--
+
+- e.g., suppose you want to prove that a property P(n) is true for all integers n >= 0,  
+
+--
+ - first prove that P(0) is true (__base case__), 
+
+--
+ - and then prove that if P(k) is true, then P(k+1) is also true (__inductive step__). 
+
+--
+- some properties are easier to prove using induction than other proof techniques.
+
+
+---
+name: factorial_example
+
+## Example: Factorial
+
+.small[
+
+In the example below, the objective is to calculate factorial of a given number,
+`$$
+n! =
+\begin{cases}
+n \times (n-1)! & \mbox{if }  n > 0 \\
+1 & \mbox{if }  n = 0
+\end{cases}
+$$`
+]
+
+--
+name: factorial_example_people
+.small[
+Instead of making function calls and writing a recursive function, let's see how we could
+solve this problem using people:
+]
+.center70[
+{{ content }}
+]
+
+
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-15.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-14.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-13.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-12.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-11.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-10.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-9.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-8.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-7.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-6.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-5.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-4.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-3.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-2.jpg" style="width:100%">
+---
+template: factorial_example_people
+
+<img src="img/08/recursion-comic-1.jpg" style="width:100%">
+
+
+---
+template: factorial_example
+
+
+Here is the same problem solved using a Java function:
+
+```Java
+//assume n >= 0
+long factorial ( int n ) {
+	if (n == 0)     //base case
+	    return 1;
+	else            //recursive case
+	    return n * factorial(n-1);
+}
+```
+
+--
+
+<br/>
+
+When the function is called with the initial value of 10, there are total of
+11 function calls made (and hence 11 stack frames for `factorial` placed
+on the program's stack) before any answers are produced: __Draw the stack frames in a piece of paper!__
+
+--
+
+
+- [visualize `factorial(10)` at PythonTutor](http://www.pythontutor.com/java.html#code=public%20class%20YourClassNameHere%20%7B%0A%20%20%20%20public%20static%20void%20main%28String%5B%5D%20args%29%20%7B%0A%20%20%20%20%20%20factorial%2810%29%3B%20%0A%20%20%20%20%7D%0A%20%20%20%20//assume%20n%20%3E%3D%200%0A%20%20%20%20public%20static%20long%20factorial%20%28%20int%20n%20%29%20%7B%0A%20%20%20%20%20%20if%20%28n%20%3D%3D%200%29%20%20%20%20%20//base%20case%0A%20%20%20%20%20%20%20%20%20%20return%201%3B%0A%20%20%20%20%20%20else%20%20%20%20%20%20%20%20%20%20%20%20//recursive%20case%0A%20%20%20%20%20%20%20%20%20%20return%20n%20*%20factorial%28n-1%29%3B%0A%20%20%7D%0A%7D&cumulative=false&curInstr=0&heapPrimitives=nevernest&mode=display&origin=opt-frontend.js&py=java&rawInputLstJSON=%5B%5D&textReferences=false)
+
+--
+
+Prove that the property P(n) is true for all integers n >= 4: 
+
+.center[P(n) :    `n! >= 2^n`]
+
+
+---
+
+template:section
+
+# How to Solve Problems Recursively
+
+---
+
+## How to Solve Problems Recursively
+
+Given a problem to solve, we need to come up with two things:
+
+--
+
+- __base case__, i.e., what instance of the problem is _easy_, something that
+does not require any further computation
+
+--
+
+- __recursive case__, i.e.,
+  - what steps need to be taken to reduce the problem towards that base case
+  - what should be done to the response from the recursive call to solve the problem
+
+
+--
+
+There may be more than one recursive algorithm to solve the same problem.
+
+
+---
+## Reverse a String, Version 1
+
+- __base case__: a reversed version of a string with one character is itself
+
+--
+.smaller[`$$
+reverse(str) =
+\begin{cases}
+str  & length(str) = 1 \\
+??? & length(str) > 1
+\end{cases}
+$$`]
+
+--
+
+- __recursive case__: for strings with more than one letter, we need the reverse of
+the first $n-1$ letters, and then we can add the last letter to the beginning of that
+
+--
+.smaller[`$$
+reverse(str) =
+\begin{cases}
+str  & length(str) = 1 \\
+str[n-1] + reverse(str[0 : n-2]) & length(str) > 1
+\end{cases}
+$$`]
+
+  (assume that subscript operator, $[ ]$, extracts either a single or a range of characters).
+
+--
+
+
+.left-column2-large[
+```Java
+String reverse ( String str) {
+  if (str.length() == 1 )
+    return str;
+  else {
+    int last = str.length()-1;
+    return str.charAt(last) +
+          reverse( str.substring(0,last) ) ;
+  }
+}
+```
+]
+--
+.right-column2-small[
+.red[Any problems with this version?]
+]
+--
+.right-column2-small[
+Neither the algorithm nor the function has a solution for an empty string.
+]
+
+
+
+---
+## Reverse a String, Version 2
+
+Solution: change the base case to be the empty string instead of
+the one character string.
+
+--
+name: reverse_ver2
+
+.smaller[`$$
+reverse(str) =
+\begin{cases}
+str  & length(str) = 0 \\
+str[n-1] + reverse(str[0 : n-2]) & length(str) > 0
+\end{cases}
+$$`]
+
+
+--
+
+.left-column2-large[
+```Java
+String reverse ( String str) {
+  if (str.length() == 0 )
+    return str;
+  else {
+    int last = str.length()-1;
+    return str.charAt(last) +
+          reverse( str.substring(0,last) ) ;
+  }
+}
+```
+]
+--
+.right-column2-small[
+.red[Any problems with this version?]
+]
+--
+.right-column2-small[
+The function crashes when `str = null`.
+]
+
+---
+template:reverse_ver2
+
+<br/>
+
+__Solution__ add a check for null.
+
+--
+
+.left-column2-large[
+```Java
+String reverse ( String str) {
+*  if (str == null )
+*    return null;
+  if (str.length() == 0 )
+    return str;
+  else {
+    int last = str.length()-1;
+    return str.charAt(last) +
+          reverse( str.substring(0,last) ) ;
+  }
+}
+```
+]
+--
+.right-column2-small[
+.red[Any problems with this version?]
+]
+--
+.right-column2-small[
+The check for `null` is executed in __every__ recursive call.
+Even though once we check that `str` is not `null`, it can
+not become `null` in the process of the function calls.
+]
+
+
+---
+template:reverse_ver2
+
+<br/>
+
+__Solution__ create a __wrapper function__
+that checks for errors that can occur only once, and then
+calls the recursive function.
+
+--
+
+.left-column2-large[
+```Java
+*String reverse ( String str) {
+*  if (str == null )
+*    return null;
+*  return reverseRec( str )
+*}
+
+String reverseRec ( String str) {
+  if (str.length() == 0 )
+    return str;
+  else {
+    int last = str.length()-1;
+    return str.charAt(last) +
+          reverseRec( str.substring(0,last) ) ;
+  }
+}
+```
+]
+--
+.right-column2-small[
+.red[Any problems with this version?]
+]
+--
+.right-column2-small[
+Concatenation of type `String` is very slow in Java: each time leading to the creation of a `new String` of size `n`. 
+
+But on other programming languages, such as Caml, this function could be very fast!
+]
+
+
+---
+
+
+template:breakout
+
+## Other Algorithms for Reversing a String
+
+Can you think of other recursive algorithms for reversing the string?
+
+What makes an algorithm for the same problem different:
+- different base case
+- different recursive case
+- same result
+
+
+---
+
+
+template:breakout
+
+## Avoiding the `substring` Call
+
+Can you think of implementing the `reverse` method so that it does not 
+need to use the `substring` method of the `String` class? (idea: add two indices to the recursive function)
+
+
+---
+template:breakout
+
+## Break
+
+That's all we need to know about recursion for now! We will see more advanced examples later in the course. 
+---
+
+template: section
+
+# How Does Recursion Work?
+## How Does it Actually Produce a Solution?
+
+---
+name:how-it-works
+
+## How Does Recursion Work?
+
+
+.left-column2[
+.smaller[
+```Java
+String reverse ( String str) {
+  if (str == null )
+    return null;
+  return reverseRec( str )
+}
+
+String reverseRec ( String str) {
+  if (str.length() == 0 )
+    return str;
+  else {
+    int last = str.length()-1;
+    return str.charAt(last) +
+          reverseRec( str.substring(0,last) ) ;
+  }
+}
+```
+]
+
+What happens when we call `reverse("moon")`?
+
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   ???
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + ???
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "m"
+return:   'm' + ???
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "m"
+return:   'm' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: ""
+return:   ""
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "m"
+return:   'm' + ""
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "m"
+return:   "m"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   'o' + "m"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "mo"
+return:   "om"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   'o' + "om"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moo"
+return:   "oom"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   'n' + "oom"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   ???
+</pre>]
+
+.clearbox[<pre>
+function: reverseRec
+argument: "moon"
+return:   "noom"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+
+</pre>]
+
+.clearbox[<pre>
+function: reverse
+argument: "moon"
+return:   "noom"
+</pre>]
+
+]
+]
+---
+template:how-it-works
+
+.right-column2[
+Stack frames:
+
+.small[
+.clearbox[<pre>
+function that makes `reverse("moon")` call
+
+receives "noom" as the solution
+</pre>]
+
+]
+]
+
+---
+template: section 
+
+# Mystery Function
+
+---
+
+## What do you think this function does? 
+
+```
+    int foo ( int a,  int b  ) {
+
+        if ( a == 0 ) 
+            return 1;
+            
+        int x = a/2; 
+        
+        int val = foo (x, b); 
+        
+        if ( a % 2 == 0 ) 
+            return val * val;
+        else 
+            return val * val * b; 
+
+    }
+```
+
+__What is returned when we call `foo(5,2)`?__
+
+---
+name:power
+
+## How do we trace a recursive function? 
+
+```
+int foo ( int a,  int b  ) {
+    if ( a == 0 ) 
+        return 1;
+    int x = a/2; 
+    int val = foo (x, b); 
+    if ( a % 2 == 0 ) 
+        return val * val;
+    else 
+        return val * val * b; 
+
+}
+```
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  ? | ? | ? |
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+
+--
+
+<br/>
+Why is `x` equal to 2 and not 2.5? 
+
+--
+
+Can we determine what `val` is at this point? 
+--
+No, because we need to make the recurvise call first. 
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+--
+
+|`foo(2, 2)` | 2 | 2 |  1 | ? | ? |
+--
+
+<br/>
+Each new stack frame has its own memory locations to store each variable:
+- in the stack frame for `foo(5,2)` there are memory locations for `a`, `b`, `x` and `val`,
+- in the stack frame for `foo(2,2)` there are __different__ memory locations for `a`, `b`, `x` and `val`.
+
+This is why a variable can have different values in different recursive calls.
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | ? | ? |
+--
+
+|`foo(1, 2)` | 1 | 2 |  0 | ? | ? |
+--
+
+|`foo(0, 2)` | 0 | 2 |  ? | ? | ? | 
+
+--
+
+<br/>
+What happens now? 
+
+--
+
+<br/>
+We just _hit_ the base case. The `if` statement condition is `true` and 
+the function will return right away.
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | ? | ? |
+|`foo(1, 2)` | 1 | 2 |  0 | ? | ? |
+|`foo(0, 2)` | 0 | 2 |  N/A | N/A | .yellow[ **1** ] | 
+
+--
+
+<br/>
+The return value from `foo(0,2)` is then assigned to `val` in `foo(1,2)`
+and `foo(0,2)` is removed from the stack (which we show by .gray[_graying it out_]). 
+
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | ? | ? |
+|`foo(1, 2)` | 1 | 2 |  0 | .yellow[**1**] | ? |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 | 
+
+--
+
+<br/>
+Since `a % 2` is `1 % 2 = 1`, the return value is `1 * 1 * 2 = 2`. 
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | ? | ? |
+|`foo(1, 2)` | 1 | 2 |  0 | 1 | .yellow[**2**] |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 | 
+
+--
+
+<br/>
+And the return value from `foo(1,2)` is assigned to `val` in `foo(2,2)`
+and `foo(1,2)` is removed from the stack. 
+
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | .yellow[**2**] | ? |
+|.gray[`foo(1, 2)`] | 1 | 2 |  0 | 1 | 2 |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 | 
+
+--
+
+<br/>
+Since `a % 2` is `2 % 2 = 0`, the return value is `2 * 2 = 4`. 
+
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | ? | ? |
+|`foo(2, 2)` | 2 | 2 |  1 | 2 | .yellow[**4**] |
+|.gray[`foo(1, 2)`] | 1 | 2 |  0 | 1 | 2 |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 | 
+
+--
+
+<br/>
+And the return value from `foo(2,2)` is assigned to `val` in `foo(5,2)`
+and `foo(2,2)` is removed from the stack. 
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | .yellow[**4**] | ? |
+|.gray[`foo(2, 2)`] | 2 | 2 |  1 | 2 | 4 |
+|.gray[`foo(1, 2)`] | 1 | 2 |  0 | 1 | 2 |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 |  
+
+--
+
+<br/>
+Since `a % 2` is `5 % 2 = 1`, the return value is `4 * 4 * 2 = 32`. 
+
+
+---
+template:power
+
+|function call |  value of `a` start | value of `b` end |  value of `x` | value of `val` | return value |
+|----|:----:|:----:|:----:|:----:|:----:|
+|`foo(5, 2)` | 5 | 2 |  2 | 4 | .yellow[**32**] |
+|.gray[`foo(2, 2)`] | 2 | 2 |  1 | 2 | 4 |
+|.gray[`foo(1, 2)`] | 1 | 2 |  0 | 1 | 2 |
+|.gray[`foo(0, 2)`] | 0 | 2 |  N/A | N/A | 1 |  
+
+--
+
+<br/>
+This function computes the value of $a^b$ for non-negative integer $a$ and an integer $b$.
+
+---
+## Challenge  1
+
+Perform a similar function trace using the function below and the function call 
+`power(5,2)`. 
+
+```
+int power ( int a,  int b  ) {
+    if ( a == 0 ) 
+        return 1;
+    return b * power( a-1, b ); 
+
+}
+```
+
+--
+
+- How many function calls are made before we get the result? 
+
+- Which of the two functions, `foo` or `power`, is faster? 
+
+- Can you guess / estimate how many function calls would be made for each 
+if the arguments were  `a = 1024` and `b = 2`? (Ignore the fact that the results 
+will be meaningless because of the integer overflow.) 
+
+
+---
+## Challenge  2
+
+What does this function do? 
+
+
+```
+int foo ( int a,  int b  ) {
+    if ( a == 0 ) 
+        return 0;
+    int x = a/2; 
+    int val = foo (x, b); 
+    if ( a % 2 == 0 ) 
+        return val + val;
+    else 
+        return val + val + b; 
+
+}
+```
+
+Note that it uses addition instead of multiplication from the previous version. 
+
+---
+template: section
+
+# Other Recursion Examples
+
+---
+
+## Calculate Size of a Linked List
+
+Use recursion to calculate the number of nodes in a singly linked list.
+Do not use a `size` data field!
+
+Can you anticipate potential problems with this solution?
+
+---
+
+## Linked List in Reverse
+
+Write a function that produces a string representation of a linked list
+in reverse order, call it `toStringReverse`.
+
+Remember, the objective is to do this recursively.
+
+---
+
+## Is It a Palindrome
+
+Determine if a given string is a palindrome, i.e., a string that reads the same
+forwards and backwards. For example "madam" is a palindrome.
+
+Part 2: Revise the above algorithm to ignore spaces and punctuation marks. In
+this version "A nut for a jar of tuna." is a palindrome.
+
+Part 2.5: Can you solve part 2 without using any loops. 
+
+---
+
+## Does it Contain ...?
+
+Determine if a given string contains a particular letter. This should return `true`
+or `false`. For example: `contains("Hello", 'l')` should return `true`, but
+`contains("Hello", 'c')` should return `false`. <br>
+Remember: the goal is to do this recursively!
+
+Part 2: Extend this idea to working with arrays. In this version instead of
+looking for a character in a string, look for a specific element in an array of elements.
+
+Note, Part 2 gives you a recursive implementation of a linear search.
+
+Can you anticipate potential problems with the solution to Part 2?
+
+
+---
+
+template: section
+
+## Generating Sequences
+
+---
+
+## Generate All Sequences ...
+
+In some situations we want to be able to produce all possible sequences of
+some set of characters.
+
+--
+
+.right-column2-small[
+<a title="Valentijn Sessink, CC0, via Wikimedia Commons"
+href="https://commons.wikimedia.org/wiki/File:Scrabble-letters-modern-nederlands.jpg">
+<img width="170" alt="Scrabble-letters-modern-nederlands"
+src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Scrabble-letters-modern-nederlands.jpg/128px-Scrabble-letters-modern-nederlands.jpg"></a>
+]
+__Example__
+
+Imagine you are implementing a program that is a _Scrabble Helper_. The
+player has a particular set of letters and your program is supposed to come
+up with all seven letter words that can be created from those letters.
+
+An algorithm:
+- create all possible sequences of the letters
+- check each sequence in an approved dictionary (throw out the ones that are not there)
+
+(This is a very slow algorithm, but ... )
+
+--
+
+-----
+
+We'll start with slightly easier examples:
+- generate all sequences of two characters: '0' and '1'
+(or all binary sequences) of a particular length
+- generate all sequences of ten characters: '0', '1', ..., '9'
+(or all decimal sequences) of a particular length
+- generate all binary sequences that do not end in a zero
+- generate all binary sequences that do not have a 1 in a third position
+- generate all binary sequences that have fewer than 5 ones
+- generate ...
+
+
+---
+
+template:breakout
+
+## Generate All Binary Sequence of Length `n`
+
+In a small group come up with a recursive algorithm for generating
+all binary sequences of a given length.
+
+For example, if `n=3`, all binary sequences of length `3` are
+`000`, `001`, `010`, `011`, `100`, `101`, `110`, `111`. There are
+eight of them because we have three positions to fill and two options for each
+position, so $2^3 = 8$.
+
+- Decide what the base case could be (there may be different ones that will work)
+
+- Decide what the recursive case could be.
+
+- Try to write the code that accomplishes the task.
+
+
+    </textarea>
+
+
+
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
+    <script type="text/javascript">
+      //var slideshow = remark.create();
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
+
+
+
+  </body>
+</html>
