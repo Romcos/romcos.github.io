@@ -4,11 +4,23 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Labyrinthe + Multi Agents (Random DFS / CTE)</title>
+  <!-- Copyright (c) 2026 Romain — see LICENSE for terms. -->
+
+<!-- 
+  ______________________ CSS ____________________
+  Complete CSS Stylying 
+    body, button, select: refer to html elements
+    .layout, .controls etc.: are class selectors
+  __________________________________________
+-->
   <style>
     body { display:flex; flex-direction:column; align-items:center; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-    .layout { display:flex; gap:20px; align-items:flex-start; width:100%; max-width:1200px; }
+    .layout { display:flex; gap:20px; align-items:flex-start; width:100%; max-width:1400px; }
     .controls { width:320px; min-width:260px; }
     .canvasPanel { flex:1; display:flex; justify-content:center; }
+    .debugPanel { width:160px; min-width:160px; display:none; }
+    .debugPanel.visible { display:block; }
+    .debugPanel button { width:100%; margin-top:8px; }
     .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content:flex-start; }
     label { display: inline-flex; gap: 8px; align-items: center; }
     input[type="number"] { width: 90px; padding: 6px 8px; }
@@ -19,28 +31,39 @@
     .hint { color: #666; font-size: 14px; margin-top: 8px; line-height: 1.35; }
     .panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; box-sizing: border-box; }
     .agentRow { display:flex; align-items:center; gap:10px; padding:6px 0; flex-wrap: wrap; }
+    .agentRow input[type="range"] { flex: 1 1 160px; min-width: 120px; }
     .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); }
-    .pill { padding: 3px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 13px; background:#fff; }
+    .pill { padding: 3px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 13px; background:#fff; display:inline-block; min-width:64px; text-align:center; }
     .small { font-size: 13px; color:#444; }
     @media (max-width: 800px) {
       .layout { flex-direction:column; align-items:center; }
       .controls { width:90%; }
       .canvasPanel { width:100%; }
+      .debugPanel { width:90%; }
       input[type="range"] { width: 100%; }
     }
   </style>
 </head>
+
+
+<!-- 
+  ______________________ HTML ____________________
+  Document structure and elements (divs, buttons, inputs, canvas, etc.)
+   - class and id attributes for styling and JS access
+  __________________________________________
+-->
+
 <body>
   <div class="layout">
     <div class="controls">
       <div class="row">
         <label>
-          Taille (N×N)
+          Size (N×N)
           <input id="size" type="number" min="2" max="250" value="30" />
         </label>
 
         <label>
-          Générateur
+          Maze generator
           <select id="generator">
             <option value="wilson">Wilson (UST)</option>
             <option value="dfs">Recursive DFS</option>
@@ -48,23 +71,25 @@
         </label>
 
         <label>
-          Algorithme
-          <select id="algo">
-            <option value="random_dfs">Random DFS</option>
-            <option value="cte">CTE (Collective Tree Exploration)</option>
-          </select>
-        </label>
-
-        <button id="generate">Générer</button>
-        <button id="restart">Recommencer l’exploration</button>
-
-        <span style="width: 10px;"></span>
-
-        <label>
           Agents
           <input id="agentCount" type="number" min="1" max="30" value="10" />
         </label>
-        <button id="applyAgents">Appliquer</button>
+
+        <label>
+          Exploration Algorithm
+          <select id="algo">
+            <option value="random_dfs">Random DFS</option>
+            <option value="cte">CTE (Collective Tree Exploration)</option>
+            <option value="opt">OPT (Optimal Path Division)</option>
+          </select>
+        </label>
+
+        <button id="generate">Generate</button>
+        <button id="restart">Restart</button>
+        <label style="margin-top:8px;">
+          <input type="checkbox" id="debugToggle" />
+          Debug
+        </label>
       </div>
 
       <div class="hint">
@@ -73,10 +98,20 @@
         <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
         <b>BFDN</b> TODO<br/>
         <b>Potential algo</b> TODO
+        <b>OPT</b> TODO
         <br/><br/>
       Maze generation: <br/>
         <b>Wilson</b> : uniform spanning tree, typical depth is n^(1/2). <br/>
         <b>Recursive DFS</b> : longer paths, harder to parallelize well (CTE does not do so well). Typical depth is n^(5/8)
+      </div>
+
+      <div id="timerPanel" class="panel">
+        <div class="small">Elapsed time & Progress</div>
+        <div class="row" style="align-items:center; gap:10px; justify-content:space-between;">
+          <span id="timerVal" class="pill">0.00 s</span>
+          <span id="movesVal" class="pill">0 moves</span>
+          <span id="progressVal" class="pill">0 %</span>
+        </div>
       </div>
 
       <div id="globalSpeedPanel" class="panel">
@@ -93,11 +128,43 @@
     <div class="canvasPanel">
       <canvas id="canvas"></canvas>
     </div>
+
+    <div class="debugPanel" id="debugPanel">
+      <div class="panel">
+        <div class="small" style="margin-bottom:8px;">Debug</div>
+        <label>
+          <input type="checkbox" id="chkShowLongestPath" />
+          Longest Path
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShadeDoneSubtrees" />
+          Shade done subtrees (CTE)
+        </label>
+      </div>
+    </div>
   </div>
+  
+
+  <!-- 
+  ______________________ JAVASCRIPT ____________________
+ -->
+
 
   <script type="module">
     // =========================
     // Labyrinthe "grille + murs"
+    // Representation:
+    // - each cell stores a bitmask of walls (N,E,S,W). A cleared bit means there's no wall.
+    // - cells are indexed 0..(w*h-1). Index -> (x,y) via `i % width` and `i/width|0`.
+    // - the class `GridMaze` provides carving and neighbour listing used by
+    //   generators and agents.
+    //
+    // GridMaze details:
+    // - `walls`: Uint8Array(length = width*height) storing bitmask N|E|S|W per cell
+    // - `idx(x,y)`: convert (x,y) to linear index
+    // - `xy(i)`: convert linear index to [x,y]
+    // - `carve(i,j,dirIndex)`: remove wall between i and j using DIRS[dirIndex]
+    // - `openNeighbors(i)`: list neighbour indices reachable from i (no wall)
     // =========================
     const N = 1, E = 2, S = 4, W = 8;
 
@@ -112,14 +179,14 @@
       constructor(width, height) {
         this.width = width;
         this.height = height;
-        this.walls = new Uint8Array(width * height).fill(N | E | S | W);
+        this.walls = new Uint8Array(width * height).fill(N | E | S | W); // add walls everywhere by default
       }
       idx(x, y) { return y * this.width + x; }
       xy(i) { return [i % this.width, (i / this.width) | 0]; }
-      carve(i, j, dirIndex) {
+      carve(i, j, dirIndex) {//remove wall between i and j in direction DIRS[dirIndex]
         const d = DIRS[dirIndex];
-        this.walls[i] &= ~d.bit;
-        this.walls[j] &= ~d.opp;
+        this.walls[i] &= ~d.bit; // remove wall in i
+        this.walls[j] &= ~d.opp; // remove opposite wall in j
       }
       openNeighbors(i) {
         const w = this.width, h = this.height;
@@ -133,6 +200,97 @@
         if (!(m & S) && y < h - 1) out.push(i + w);
         if (!(m & W) && x > 0) out.push(i - 1);
         return out;
+      }
+    
+      // -------------------------
+      // Maze generators as GridMaze static methods
+      // These were previously top-level functions. Keeping them as
+      // static methods groups generation logic with the grid representation.
+      // -------------------------
+      static generateWilson(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+        const neigh = buildNeighborTable(w, h);
+
+        const inTree = new Uint8Array(n);
+        const next = new Int32Array(n).fill(-1);
+        const nextDir = new Int8Array(n).fill(-1);
+        const walkIndex = new Int32Array(n).fill(-1);
+
+        const root = randInt(n);
+        inTree[root] = 1;
+
+        const walk = [];
+
+        for (let start = 0; start < n; start++) {
+          if (inTree[start]) continue;
+
+          walk.length = 0;
+          let cur = start;
+
+          while (!inTree[cur]) {
+            const seenAt = walkIndex[cur];
+            if (seenAt !== -1) {
+              for (let t = seenAt; t < walk.length; t++) {
+                const v = walk[t];
+                walkIndex[v] = -1;
+                next[v] = -1;
+                nextDir[v] = -1;
+              }
+              walk.length = seenAt;
+            }
+
+            walkIndex[cur] = walk.length;
+            walk.push(cur);
+
+            const options = neigh[cur];
+            const [j, di] = options[randInt(options.length)];
+            next[cur] = j;
+            nextDir[cur] = di;
+            cur = j;
+          }
+
+          for (let k = 0; k < walk.length; k++) {
+            const v = walk[k];
+            const j = next[v];
+            const di = nextDir[v];
+            maze.carve(v, j, di);
+            inTree[v] = 1;
+            walkIndex[v] = -1;
+            next[v] = -1;
+            nextDir[v] = -1;
+          }
+        }
+
+        return maze;
+      }
+
+      static generateDfs(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+        const neigh = buildNeighborTable(w, h);
+
+        const visited = new Uint8Array(n);
+        const stack = [];
+
+        const start = randInt(n);
+        visited[start] = 1;
+        stack.push(start);
+
+        while (stack.length) {
+          const v = stack[stack.length - 1];
+          const options = neigh[v].filter(x => !visited[x[0]]);
+          if (options.length === 0) {
+            stack.pop();
+            continue;
+          }
+          const [u, di] = options[randInt(options.length)];
+          maze.carve(v, u, di);
+          visited[u] = 1;
+          stack.push(u);
+        }
+
+        return maze;
       }
     }
 
@@ -157,97 +315,7 @@
       return neigh;
     }
 
-    // =========================
-    // Génération Wilson (UST)
-    // =========================
-    function generateMazeWilson(w, h) {
-      const maze = new GridMaze(w, h);
-      const n = w * h;
-      const neigh = buildNeighborTable(w, h);
-
-      const inTree = new Uint8Array(n);
-      const next = new Int32Array(n).fill(-1);
-      const nextDir = new Int8Array(n).fill(-1);
-      const walkIndex = new Int32Array(n).fill(-1);
-
-      const root = randInt(n);
-      inTree[root] = 1;
-
-      const walk = [];
-
-      for (let start = 0; start < n; start++) {
-        if (inTree[start]) continue;
-
-        walk.length = 0;
-        let cur = start;
-
-        while (!inTree[cur]) {
-          const seenAt = walkIndex[cur];
-          if (seenAt !== -1) {
-            for (let t = seenAt; t < walk.length; t++) {
-              const v = walk[t];
-              walkIndex[v] = -1;
-              next[v] = -1;
-              nextDir[v] = -1;
-            }
-            walk.length = seenAt;
-          }
-
-          walkIndex[cur] = walk.length;
-          walk.push(cur);
-
-          const options = neigh[cur];
-          const [j, di] = options[randInt(options.length)];
-          next[cur] = j;
-          nextDir[cur] = di;
-          cur = j;
-        }
-
-        for (let k = 0; k < walk.length; k++) {
-          const v = walk[k];
-          const j = next[v];
-          const di = nextDir[v];
-          maze.carve(v, j, di);
-          inTree[v] = 1;
-          walkIndex[v] = -1;
-          next[v] = -1;
-          nextDir[v] = -1;
-        }
-      }
-
-      return maze;
-    }
-
-    // =========================
-    // Recursive backtracker (Randomized DFS) generator
-    // =========================
-    function generateMazeDfs(w, h) {
-      const maze = new GridMaze(w, h);
-      const n = w * h;
-      const neigh = buildNeighborTable(w, h);
-
-      const visited = new Uint8Array(n);
-      const stack = [];
-
-      const start = randInt(n);
-      visited[start] = 1;
-      stack.push(start);
-
-      while (stack.length) {
-        const v = stack[stack.length - 1];
-        const options = neigh[v].filter(x => !visited[x[0]]);
-        if (options.length === 0) {
-          stack.pop();
-          continue;
-        }
-        const [u, di] = options[randInt(options.length)];
-        maze.carve(v, u, di);
-        visited[u] = 1;
-        stack.push(u);
-      }
-
-      return maze;
-    }
+    
 
     // =========================
     // Couleurs
@@ -327,13 +395,17 @@
           this.visited[j] = 1;
           this.stack.push(j);
           this.current = j;
+          movesCount++;
           claimCell(this.id, j);
           return;
         }
 
         this.stack.pop();
         if (this.stack.length === 0) this.done = true;
-        else this.current = this.stack[this.stack.length - 1];
+        else {
+          this.current = this.stack[this.stack.length - 1];
+          movesCount++;
+        }
       }
     }
 
@@ -413,6 +485,141 @@
       }
     }
 
+    // =========================
+    // OPT: Deterministic DFS path builder (includes backtracking)
+    // =========================
+    function buildDfsPath(maze, root) {
+      const n = maze.width * maze.height;
+      const visited = new Uint8Array(n);
+      const path = [];
+
+      function dfs(v) {
+        visited[v] = 1;
+        path.push(v);
+        const neighbors = maze.openNeighbors(v);
+        // Sort neighbors by index for deterministic order
+        neighbors.sort((a, b) => a - b);
+        for (const u of neighbors) {
+          if (!visited[u]) {
+            dfs(u);
+            // Backtrack: return to v after exploring subtree rooted at u
+            path.push(v);
+          }
+        }
+      }
+
+      dfs(root);
+      return path;
+    }
+
+    // OPT Agent: navigate to chunk start, then DFS explore the chunk
+    class OptAgent {
+      constructor(id, colorHex, maze, root, path, chunkStartIdx, chunkEndIdx, speed = 120) {
+        this.id = id;
+        this.colorHex = colorHex;
+        this.colorRgb = hexToRgb(colorHex);
+        this.maze = maze;
+
+        this.speed = speed;
+        this.budget = 0;
+
+        this.current = root;
+        this.done = false;
+
+        // Chunk nodes: set of nodes in the agent's assigned chunk
+        this.chunkNodes = new Set(path.slice(chunkStartIdx, chunkEndIdx));
+        this.chunkStartNode = path[chunkStartIdx];
+
+        // Phase 1: navigate to chunk start using shortest path (BFS)
+        this.phase = "navigate";
+        this.shortestPath = this._computeShortestPath(root, this.chunkStartNode);
+        this.pathIndex = 0;
+
+        claimCell(this.id, root);
+      }
+
+      _computeShortestPath(from, to) {
+        const n = this.maze.width * this.maze.height;
+        const parent = new Int32Array(n).fill(-1);
+        const q = [from];
+        parent[from] = from;
+
+        while (q.length) {
+          const v = q.shift();
+          if (v === to) break;
+          const neighbors = this.maze.openNeighbors(v);
+          for (const u of neighbors) {
+            if (parent[u] === -1) {
+              parent[u] = v;
+              q.push(u);
+            }
+          }
+        }
+
+        // Reconstruct path from 'from' to 'to'
+        const path = [];
+        let v = to;
+        while (v !== from) {
+          path.unshift(v);
+          v = parent[v];
+        }
+        path.unshift(from);
+        return path;
+      }
+
+      stepOnce() {
+        if (this.done) return;
+
+        if (this.phase === "navigate") {
+          // Move along shortest path to chunk start
+          if (this.pathIndex < this.shortestPath.length - 1) {
+            this.pathIndex++;
+            this.current = this.shortestPath[this.pathIndex];
+            movesCount++;
+            claimCell(this.id, this.current);
+          } else {
+            // Reached chunk start, switch to DFS exploration
+            this.phase = "explore";
+            this.visited = new Uint8Array(this.maze.width * this.maze.height);
+            this.stack = [this.chunkStartNode];
+            this.visited[this.chunkStartNode] = 1;
+            this.current = this.chunkStartNode;
+          }
+        } else if (this.phase === "explore") {
+          // DFS exploration within chunk
+          if (this.stack.length === 0) {
+            this.done = true;
+            return;
+          }
+
+          const cur = this.stack[this.stack.length - 1];
+          this.current = cur;
+
+          const neighbors = this.maze.openNeighbors(cur);
+          const candidates = [];
+          for (const j of neighbors) {
+            if (!this.visited[j] && this.chunkNodes.has(j)) {
+              candidates.push(j);
+            }
+          }
+
+          if (candidates.length > 0) {
+            const j = candidates[randInt(candidates.length)];
+            this.visited[j] = 1;
+            this.stack.push(j);
+            this.current = j;
+            movesCount++;
+            claimCell(this.id, j);
+          } else {
+            this.stack.pop();
+            if (this.stack.length > 0) {
+              movesCount++;
+            }
+          }
+        }
+      }
+    }
+
     class CteAgent {
       constructor(id, colorHex, maze, root, parent, children, shared, speed = 120) {
         this.id = id;
@@ -485,6 +692,7 @@
         // déplacement : mise à jour subtreeAgents le long des ancêtres
         this.shared.addAgentAlongAncestors(this.current, this.parent, -1);
         this.current = next;
+        movesCount++;
         this.shared.addAgentAlongAncestors(this.current, this.parent, +1);
 
         // si on arrive sur un nœud non encore visité globalement => le marquer + claim couleur
@@ -532,6 +740,23 @@
 
       const ox = pad, oy = pad;
 
+      // optional: shade nodes whose subtree is fully done (CTE)
+      try {
+        const shade = document.getElementById('chkShadeDoneSubtrees')?.checked;
+        if (shade && cteShared) {
+          ctx.fillStyle = 'rgba(0,0,0,0.22)';
+          for (let i = 0; i < cteShared.n; i++) {
+            if (cteShared.subtreeDone[i]) {
+              const x = i % w;
+              const y = (i / w) | 0;
+              ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+            }
+          }
+        }
+      } catch (e) {
+        // defensive: if checkbox not present or cteShared missing, ignore
+      }
+
       // claims
       for (let i = 0; i < claimedBy.length; i++) {
         const aId = claimedBy[i];
@@ -570,6 +795,25 @@
         }
       }
       ctx.stroke();
+
+      // debug path (longest path)
+      if (debugPath && debugPath.length > 0) {
+        ctx.strokeStyle = "#ff0000";
+        ctx.lineWidth = Math.max(2, cell * 0.15);
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.beginPath();
+        for (let k = 0; k < debugPath.length; k++) {
+          const i = debugPath[k];
+          const x = i % w;
+          const y = (i / w) | 0;
+          const cx = ox + x * cell + cell * 0.5;
+          const cy = oy + y * cell + cell * 0.5;
+          if (k === 0) ctx.moveTo(cx, cy);
+          else ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+      }
 
       // agents
       for (const a of agents) {
@@ -616,17 +860,67 @@
     const btnGenerate = document.getElementById("generate");
     const btnRestart = document.getElementById("restart");
     const agentCountInput = document.getElementById("agentCount");
-    const btnApplyAgents = document.getElementById("applyAgents");
     const agentsPanel = document.getElementById("agentsPanel");
     const canvas = document.getElementById("canvas");
 
     let maze = null;
     let agents = [];
     let lastT = performance.now();
+    // throttle UI text updates (ms)
+    let lastUiUpdate = 0;
+    let debugPath = null; // path to render in red for debugging
+    let movesCount = 0; // shared counter for agent moves
+
+    // Timer state (ms)
+    const timerValEl = document.getElementById("timerVal");
+    let timerRunning = false;
+    let timerElapsed = 0; // milliseconds
 
     // CTE-only shared + rooted tree
     let cteTree = null;     // { parent, children, order }
     let cteShared = null;   // CteShared
+
+    // Expose for debugging in console
+    const debugVars = { get maze() { return maze; }, get agents() { return agents; }, get cteTree() { return cteTree; }, get cteShared() { return cteShared; } };
+    window._debug = debugVars;
+
+    // Find the deepest node and return the longest path from root to that node
+    function findLongestPath(mazeObj, root) {
+      const n = mazeObj.width * mazeObj.height;
+      const depth = new Int32Array(n).fill(-1);
+      const parent = new Int32Array(n).fill(-1);
+      const q = [root];
+      depth[root] = 0;
+      parent[root] = -1;
+
+      let deepestNode = root;
+      let maxDepth = 0;
+
+      while (q.length) {
+        const v = q.shift();
+        if (depth[v] > maxDepth) {
+          maxDepth = depth[v];
+          deepestNode = v;
+        }
+        const neighbors = mazeObj.openNeighbors(v);
+        for (const u of neighbors) {
+          if (depth[u] === -1) {
+            depth[u] = depth[v] + 1;
+            parent[u] = v;
+            q.push(u);
+          }
+        }
+      }
+
+      // Reconstruct path from root to deepestNode
+      const path = [];
+      let v = deepestNode;
+      while (v !== -1) {
+        path.unshift(v);
+        v = parent[v];
+      }
+      return path;
+    }
 
     function buildAgentsUI() {
       agentsPanel.innerHTML = "";
@@ -726,7 +1020,10 @@
       // fallback to the current `agents` array speeds if sliders are not present
       let prevSpeeds = agents.map(a => a.speed);
       const sliders = agentsPanel.querySelectorAll('input[type="range"]');
-      if (sliders && sliders.length > 0) prevSpeeds = Array.from(sliders).map(s => Number(s.value) || 20);
+      if (sliders && sliders.length > 0) prevSpeeds = Array.from(sliders).map(s => {
+        const v = Number(s.value);
+        return Number.isFinite(v) ? v : 20;
+      });
       resetClaims(nCells);
 
       const start = maze.idx(0, 0); // haut gauche pour tous
@@ -741,6 +1038,23 @@
           const color = PALETTE[i % PALETTE.length];
           const speed = prevSpeeds[i] ?? 20;
           const a = new CteAgent(i, color, maze, start, cteTree.parent, cteTree.children, cteShared, speed);
+          agents.push(a);
+        }
+      } else if (algo === "opt") {
+        // OPT: deterministic DFS path divided into chunks
+        cteTree = null;
+        cteShared = null;
+
+        const path = buildDfsPath(maze, start);
+        const pathLen = path.length;
+        const chunkSize = Math.ceil(pathLen / count);
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const chunkStart = i * chunkSize;
+          const chunkEnd = Math.min((i + 1) * chunkSize, pathLen);
+          const a = new OptAgent(i, color, maze, start, path, chunkStart, chunkEnd, speed);
           agents.push(a);
         }
       } else {
@@ -763,6 +1077,12 @@
 
       lastT = performance.now();
       agents.forEach(a => a.budget = 0);
+      movesCount = 0;  // reset moves counter
+
+      // restart timer when agents are (re)created
+      timerElapsed = 0;
+      timerRunning = agents.length > 0;
+      if (timerValEl) timerValEl.textContent = `${(timerElapsed / 1000).toFixed(2)} s`;
     }
 
     function restartExploration() {
@@ -774,11 +1094,11 @@
     function generateNewMaze() {
       let n = Number(sizeInput.value);
       if (!Number.isFinite(n)) n = 30;
-      n = Math.max(2, Math.min(250, Math.floor(n)));
+      n = Math.max(2, Math.min(500, Math.floor(n)));
 
       const gen = document.getElementById('generator')?.value || 'wilson';
-      if (gen === 'dfs') maze = generateMazeDfs(n, n);
-      else maze = generateMazeWilson(n, n);
+      if (gen === 'dfs') maze = GridMaze.generateDfs(n, n);
+      else maze = GridMaze.generateWilson(n, n);
 
       const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
@@ -787,16 +1107,30 @@
     btnGenerate.addEventListener("click", generateNewMaze);
     btnRestart.addEventListener("click", restartExploration);
 
-    btnApplyAgents.addEventListener("click", () => {
-      if (!maze) return;
-      const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
-      createAgents(count, algoSelect.value);
-    });
-
     algoSelect.addEventListener("change", () => {
       // garder labyrinthe, mais changer algo => restart
       if (!maze) return;
       restartExploration();
+    });
+
+    document.getElementById("debugToggle").addEventListener("change", () => {
+      const debugPanel = document.getElementById("debugPanel");
+      if (debugPanel.classList.contains("visible")) {
+        debugPanel.classList.remove("visible");
+      } else {
+        debugPanel.classList.add("visible");
+      }
+    });
+
+    document.getElementById("chkShowLongestPath").addEventListener("change", (e) => {
+      if (!maze) return;
+      if (e.target.checked) {
+        const root = maze.idx(0, 0);
+        debugPath = findLongestPath(maze, root);
+      } else {
+        debugPath = null;
+      }
+      draw(canvas, maze, claimedBy, agents);
     });
 
     window.addEventListener("resize", () => {
@@ -816,6 +1150,29 @@
       const dt = Math.max(0, (t - lastT) / 1000);
       lastT = t;
 
+      // update timer (dt is in seconds)
+      if (timerRunning) {
+        timerElapsed += dt * 1000;
+      }
+
+      // Throttle DOM updates for timer/moves/progress to reduce visual jitter
+      if (t - lastUiUpdate >= 100) {
+        lastUiUpdate = t;
+        if (timerValEl) timerValEl.textContent = `${(timerElapsed / 1000).toFixed(2)} s`;
+
+        // update exploration progress
+        const progressEl = document.getElementById("progressVal");
+        if (maze && progressEl) {
+          const totalCells = maze.width * maze.height;
+          const explorationPercent = Math.round((claimedCount / totalCells) * 100);
+          progressEl.textContent = `${explorationPercent} %`;
+        }
+
+        // update moves counter
+        const movesEl = document.getElementById("movesVal");
+        if (movesEl) movesEl.textContent = `${movesCount} moves`;
+      }
+
       if (maze && agents.length > 0 && !allDone()) {
         const maxStepsPerFramePerAgent = 2500;
 
@@ -831,6 +1188,11 @@
 
           a.budget -= stepsToDo;
         }
+      }
+
+      // if exploration completed, freeze timer
+      if (maze && agents.length > 0 && allDone()) {
+        timerRunning = false;
       }
 
       if (maze) {
