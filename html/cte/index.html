@@ -49,9 +49,10 @@
   </div>
 
   <div class="hint">
-    Tous les agents démarrent en <b>haut à gauche</b> (0,0). Une cellule prend la couleur du <b>premier</b> agent qui la visite.<br/>
-    <b>Random DFS</b> : DFS avec choix aléatoire du prochain voisin non-visité (par agent).<br/>
-    <b>CTE</b> : sur une intersection, si tout est exploré on remonte, sinon on choisit l’enfant dont le <i>sous-arbre</i> contient le moins d’agents.
+    <b>Random DFS</b> : DFS with random choice of next visited neighbour. No-communication algorithm (slower).<br/>
+    <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
+    <b>BFDN</b> TODO<br/>
+    <b>Potential algo</b> TODO
   </div>
 
   <div id="agentsPanel" class="panel"></div>
@@ -560,7 +561,7 @@
 
       const header = document.createElement("div");
       header.className = "small";
-      header.textContent = "Vitesses par agent :";
+      header.textContent = "Agent speeds :";
       agentsPanel.appendChild(header);
 
       agents.forEach((a) => {
@@ -578,7 +579,7 @@
         const slider = document.createElement("input");
         slider.type = "range";
         slider.min = "0";
-        slider.max = "50";
+        slider.max = "99";
         slider.step = "1";
         slider.value = String(a.speed);
 
@@ -619,6 +620,10 @@
     // =========================
     function createAgents(count, algo) {
       const nCells = maze.width * maze.height;
+      // read speeds from existing sliders in the UI so speeds persist across restarts/algo changes
+      let prevSpeeds = [];
+      const sliders = agentsPanel.querySelectorAll('input[type="range"]');
+      if (sliders && sliders.length > 0) prevSpeeds = Array.from(sliders).map(s => Number(s.value) || 20);
       resetClaims(nCells);
 
       const start = maze.idx(0, 0); // haut gauche pour tous
@@ -631,7 +636,8 @@
 
         for (let i = 0; i < count; i++) {
           const color = PALETTE[i % PALETTE.length];
-          const a = new CteAgent(i, color, maze, start, cteTree.parent, cteTree.children, cteShared, 20);
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new CteAgent(i, color, maze, start, cteTree.parent, cteTree.children, cteShared, speed);
           agents.push(a);
         }
       } else {
@@ -641,7 +647,8 @@
 
         for (let i = 0; i < count; i++) {
           const color = PALETTE[i % PALETTE.length];
-          const a = new RandomDfsAgent(i, color, maze, start, 20);
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new RandomDfsAgent(i, color, maze, start, speed);
           // claim start
           claimCell(a.id, start);
           agents.push(a);
