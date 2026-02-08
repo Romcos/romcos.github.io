@@ -5,58 +5,95 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Labyrinthe + Multi Agents (Random DFS / CTE)</title>
   <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    body { display:flex; flex-direction:column; align-items:center; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+    .layout { display:flex; gap:20px; align-items:flex-start; width:100%; max-width:1200px; }
+    .controls { width:320px; min-width:260px; }
+    .canvasPanel { flex:1; display:flex; justify-content:center; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content:flex-start; }
     label { display: inline-flex; gap: 8px; align-items: center; }
     input[type="number"] { width: 90px; padding: 6px 8px; }
     input[type="range"] { width: 220px; }
     select { padding: 6px 8px; }
     button { padding: 8px 12px; cursor: pointer; }
-    canvas { border: 1px solid #ddd; margin-top: 12px; max-width: 100%; height: auto; display:block; }
+    canvas { border: 1px solid #ddd; margin-top: 12px; display:block; }
     .hint { color: #666; font-size: 14px; margin-top: 8px; line-height: 1.35; }
-    .panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+    .panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; box-sizing: border-box; }
     .agentRow { display:flex; align-items:center; gap:10px; padding:6px 0; flex-wrap: wrap; }
     .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); }
     .pill { padding: 3px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 13px; background:#fff; }
     .small { font-size: 13px; color:#444; }
+    @media (max-width: 800px) {
+      .layout { flex-direction:column; align-items:center; }
+      .controls { width:90%; }
+      .canvasPanel { width:100%; }
+      input[type="range"] { width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div class="row">
-    <label>
-      Taille (N×N)
-      <input id="size" type="number" min="2" max="250" value="30" />
-    </label>
+  <div class="layout">
+    <div class="controls">
+      <div class="row">
+        <label>
+          Taille (N×N)
+          <input id="size" type="number" min="2" max="250" value="30" />
+        </label>
 
-    <label>
-      Algorithme
-      <select id="algo">
-        <option value="random_dfs">Random DFS</option>
-        <option value="cte">CTE (Collective Tree Exploration)</option>
-      </select>
-    </label>
+        <label>
+          Générateur
+          <select id="generator">
+            <option value="wilson">Wilson (UST)</option>
+            <option value="dfs">Recursive DFS</option>
+          </select>
+        </label>
 
-    <button id="generate">Générer</button>
-    <button id="restart">Recommencer l’exploration</button>
+        <label>
+          Algorithme
+          <select id="algo">
+            <option value="random_dfs">Random DFS</option>
+            <option value="cte">CTE (Collective Tree Exploration)</option>
+          </select>
+        </label>
 
-    <span style="width: 10px;"></span>
+        <button id="generate">Générer</button>
+        <button id="restart">Recommencer l’exploration</button>
 
-    <label>
-      Agents
-      <input id="agentCount" type="number" min="1" max="12" value="3" />
-    </label>
-    <button id="applyAgents">Appliquer</button>
+        <span style="width: 10px;"></span>
+
+        <label>
+          Agents
+          <input id="agentCount" type="number" min="1" max="30" value="10" />
+        </label>
+        <button id="applyAgents">Appliquer</button>
+      </div>
+
+      <div class="hint">
+      Algorithms: <br/>
+        <b>Random DFS</b> : DFS with random choice of next visited neighbour. No-communication algorithm (slower).<br/>
+        <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
+        <b>BFDN</b> TODO<br/>
+        <b>Potential algo</b> TODO
+        <br/><br/>
+      Maze generation: <br/>
+        <b>Wilson</b> : uniform spanning tree, typical depth is n^(1/2). <br/>
+        <b>Recursive DFS</b> : longer paths, harder to parallelize well (CTE does not do so well). Typical depth is n^(5/8)
+      </div>
+
+      <div id="globalSpeedPanel" class="panel">
+        <div class="small">All speeds</div>
+        <div class="row" style="align-items:center; gap:10px;">
+          <input id="allSpeed" type="range" min="0" max="99" step="1" value="20" />
+          <span id="allSpeedVal" class="pill">20 / s</span>
+        </div>
+      </div>
+
+      <div id="agentsPanel" class="panel"></div>
+    </div>
+
+    <div class="canvasPanel">
+      <canvas id="canvas"></canvas>
+    </div>
   </div>
-
-  <div class="hint">
-    <b>Random DFS</b> : DFS with random choice of next visited neighbour. No-communication algorithm (slower).<br/>
-    <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
-    <b>BFDN</b> TODO<br/>
-    <b>Potential algo</b> TODO
-  </div>
-
-  <div id="agentsPanel" class="panel"></div>
-  <canvas id="canvas"></canvas>
 
   <script type="module">
     // =========================
@@ -176,6 +213,37 @@
           next[v] = -1;
           nextDir[v] = -1;
         }
+      }
+
+      return maze;
+    }
+
+    // =========================
+    // Recursive backtracker (Randomized DFS) generator
+    // =========================
+    function generateMazeDfs(w, h) {
+      const maze = new GridMaze(w, h);
+      const n = w * h;
+      const neigh = buildNeighborTable(w, h);
+
+      const visited = new Uint8Array(n);
+      const stack = [];
+
+      const start = randInt(n);
+      visited[start] = 1;
+      stack.push(start);
+
+      while (stack.length) {
+        const v = stack[stack.length - 1];
+        const options = neigh[v].filter(x => !visited[x[0]]);
+        if (options.length === 0) {
+          stack.pop();
+          continue;
+        }
+        const [u, di] = options[randInt(options.length)];
+        maze.carve(v, u, di);
+        visited[u] = 1;
+        stack.push(u);
       }
 
       return maze;
@@ -434,9 +502,11 @@
     // =========================
     // Rendu
     // =========================
+    // Canvas sizing (default target size)
     function fitCanvas(canvas, targetCssPx = 900) {
       const dpr = window.devicePixelRatio || 1;
-      const cssW = Math.min(targetCssPx, Math.floor(document.body.clientWidth - 32));
+      const parentW = (canvas.parentElement && canvas.parentElement.clientWidth) || document.body.clientWidth;
+      const cssW = Math.min(targetCssPx, Math.max(100, Math.floor(parentW - 32)));
       const cssH = cssW;
 
       canvas.style.width = cssW + "px";
@@ -450,7 +520,7 @@
     }
 
     function draw(canvas, maze, claimedBy, agents) {
-      const { ctx, cssW, cssH } = fitCanvas(canvas, 900);
+      const { ctx, cssW, cssH } = fitCanvas(canvas);
 
       const w = maze.width, h = maze.height;
       const pad = 10;
@@ -541,6 +611,8 @@
     // =========================
     const sizeInput = document.getElementById("size");
     const algoSelect = document.getElementById("algo");
+    const allSpeedInput = document.getElementById("allSpeed");
+    const allSpeedVal = document.getElementById("allSpeedVal");
     const btnGenerate = document.getElementById("generate");
     const btnRestart = document.getElementById("restart");
     const agentCountInput = document.getElementById("agentCount");
@@ -590,6 +662,20 @@
         slider.addEventListener("input", () => {
           a.speed = Number(slider.value) || 0;
           valPill.textContent = `${a.speed} / s`;
+          // keep global slider value in sync if all agents share the same speed
+          if (allSpeedInput) {
+            const rows = agentsPanel.querySelectorAll('.agentRow');
+            let same = true;
+            for (let i = 0; i < rows.length; i++) {
+              const s = rows[i].querySelector('input[type="range"]');
+              if (!s) continue;
+              if (Number(s.value) !== a.speed) { same = false; break; }
+            }
+            if (same) {
+              allSpeedInput.value = String(a.speed);
+              if (allSpeedVal) allSpeedVal.textContent = `${a.speed} / s`;
+            }
+          }
         });
 
         const status = document.createElement("span");
@@ -603,6 +689,22 @@
         row.appendChild(valPill);
         row.appendChild(status);
         agentsPanel.appendChild(row);
+      });
+    }
+
+    // global all-speed slider: set every agent speed and update UI
+    if (allSpeedInput) {
+      allSpeedInput.addEventListener('input', () => {
+        const v = Number(allSpeedInput.value) || 0;
+        if (allSpeedVal) allSpeedVal.textContent = `${v} / s`;
+        agents.forEach(a => { a.speed = v; });
+        const rows = agentsPanel.querySelectorAll('.agentRow');
+        rows.forEach(row => {
+          const s = row.querySelector('input[type="range"]');
+          const pill = row.querySelector('.pill');
+          if (s) s.value = String(v);
+          if (pill) pill.textContent = `${v} / s`;
+        });
       });
     }
 
@@ -621,7 +723,8 @@
     function createAgents(count, algo) {
       const nCells = maze.width * maze.height;
       // read speeds from existing sliders in the UI so speeds persist across restarts/algo changes
-      let prevSpeeds = [];
+      // fallback to the current `agents` array speeds if sliders are not present
+      let prevSpeeds = agents.map(a => a.speed);
       const sliders = agentsPanel.querySelectorAll('input[type="range"]');
       if (sliders && sliders.length > 0) prevSpeeds = Array.from(sliders).map(s => Number(s.value) || 20);
       resetClaims(nCells);
@@ -664,7 +767,7 @@
 
     function restartExploration() {
       if (!maze) return;
-      const count = agents.length || Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      const count = agents.length || Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
     }
 
@@ -673,9 +776,11 @@
       if (!Number.isFinite(n)) n = 30;
       n = Math.max(2, Math.min(250, Math.floor(n)));
 
-      maze = generateMazeWilson(n, n);
+      const gen = document.getElementById('generator')?.value || 'wilson';
+      if (gen === 'dfs') maze = generateMazeDfs(n, n);
+      else maze = generateMazeWilson(n, n);
 
-      const count = Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
     }
 
@@ -684,7 +789,7 @@
 
     btnApplyAgents.addEventListener("click", () => {
       if (!maze) return;
-      const count = Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
     });
 
