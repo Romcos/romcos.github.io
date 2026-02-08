@@ -79,8 +79,8 @@
           Exploration Algorithm
           <select id="algo">
             <option value="random_dfs">Random DFS</option>
-            <option value="cte">CTE (Collective Tree Exploration)</option>
-            <option value="opt">OPT (Optimal Path Division)</option>
+            <option value="cte">CTE (FGKP)</option>
+            <option value="opt">2OPT (not fully operational yet)</option>
           </select>
         </label>
 
@@ -97,7 +97,7 @@
         <b>Random DFS</b> : DFS with random choice of next visited neighbour. No-communication algorithm (slower).<br/>
         <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
         <b>BFDN</b> TODO<br/>
-        <b>Potential algo</b> TODO
+        <b>Potential algo [CM24]</b> TODO<br/>
         <b>OPT</b> TODO
         <br/><br/>
       Maze generation: <br/>
