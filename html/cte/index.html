@@ -67,6 +67,7 @@
           <select id="generator">
             <option value="wilson">Wilson (UST)</option>
             <option value="dfs">Recursive DFS</option>
+            <option value="comb">Comb</option>
           </select>
         </label>
 
@@ -292,6 +293,42 @@
 
         return maze;
       }
+      
+      static generateComb(w, h) {
+        // Deterministic comb:
+        // Backbone: full top row (0,0) -> (w-1,0)
+        // Teeth: each column has a vertical path down from the top row
+        const maze = new GridMaze(w, h);
+
+        // Helper: linear index
+        const idx = (x, y) => y * w + x;
+
+        // 1) Backbone: connect top row horizontally
+        // Direction index here should match your carve() convention.
+        // Common convention: 1 = east (right). Adjust if needed.
+        const EAST = 1;
+
+        for (let x = 0; x < w - 1; x++) {
+          const a = idx(x, 0);
+          const b = idx(x + 1, 0);
+          maze.carve(a, b, EAST);
+        }
+
+        // 2) Teeth: connect each column vertically downward
+        // Common convention: 2 = south (down). Adjust if needed.
+        const SOUTH = 2;
+
+        for (let x = 0; x < w; x++) {
+          for (let y = 0; y < h - 1; y++) {
+            const a = idx(x, y);
+            const b = idx(x, y + 1);
+            maze.carve(a, b, SOUTH);
+          }
+        }
+
+        return maze;
+      }
+
     }
 
     function randInt(n) { return (Math.random() * n) | 0; }
@@ -1098,6 +1135,7 @@
 
       const gen = document.getElementById('generator')?.value || 'wilson';
       if (gen === 'dfs') maze = GridMaze.generateDfs(n, n);
+      else if (gen === 'comb') maze = GridMaze.generateComb(n, n);
       else maze = GridMaze.generateWilson(n, n);
 
       const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
