@@ -95,18 +95,17 @@
 
       <div class="hint">
        - Maze generation: <br/>
-      <b>Wilson</b> : uniform spanning tree, D ~ n^(1/2). <br/>
-      <b>Recursive DFS</b> : longer paths, D ~ n^(5/8).<br/>
+      <b>Wilson</b> : uniform spanning tree, D ~ N. <br/>
+      <b>Recursive DFS</b> : longer paths, D ~ N^(5/4).<br/>
       <b>Comb</b> : difficult for CTE.
       <br/><br/>
        - Algorithms: <br/>
-        <b>Random DFS</b> independent DFSss with random tie-breaking. No-communication.<br/>
+        <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br/>
         <b>CTE</b> [FGKP06]'s greedy algorithm. Agents go to nearest unfinished subtree. Distributed communications. <br/>
         <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
         <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
         <br/><br/>
-       - Suggested parameters: <br/>
-      Try with large number of robots an high speeds to see nice patterns emerge. 
+       - Suggested parameters: Try with large number of robots (up to 30), high speeds, and large N (up to 300) to see nice patterns emerge. 
       </div>
 
       <div id="timerPanel" class="panel">
