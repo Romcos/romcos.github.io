@@ -1,0 +1,737 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Labyrinthe + Multi Agents (Random DFS / CTE)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
+    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    label { display: inline-flex; gap: 8px; align-items: center; }
+    input[type="number"] { width: 90px; padding: 6px 8px; }
+    input[type="range"] { width: 220px; }
+    select { padding: 6px 8px; }
+    button { padding: 8px 12px; cursor: pointer; }
+    canvas { border: 1px solid #ddd; margin-top: 12px; max-width: 100%; height: auto; display:block; }
+    .hint { color: #666; font-size: 14px; margin-top: 8px; line-height: 1.35; }
+    .panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+    .agentRow { display:flex; align-items:center; gap:10px; padding:6px 0; flex-wrap: wrap; }
+    .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); }
+    .pill { padding: 3px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 13px; background:#fff; }
+    .small { font-size: 13px; color:#444; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <label>
+      Taille (N×N)
+      <input id="size" type="number" min="2" max="250" value="30" />
+    </label>
+
+    <label>
+      Algorithme
+      <select id="algo">
+        <option value="random_dfs">Random DFS</option>
+        <option value="cte">CTE (Collective Tree Exploration)</option>
+      </select>
+    </label>
+
+    <button id="generate">Générer</button>
+    <button id="restart">Recommencer l’exploration</button>
+
+    <span style="width: 10px;"></span>
+
+    <label>
+      Agents
+      <input id="agentCount" type="number" min="1" max="12" value="3" />
+    </label>
+    <button id="applyAgents">Appliquer</button>
+  </div>
+
+  <div class="hint">
+    Tous les agents démarrent en <b>haut à gauche</b> (0,0). Une cellule prend la couleur du <b>premier</b> agent qui la visite.<br/>
+    <b>Random DFS</b> : DFS avec choix aléatoire du prochain voisin non-visité (par agent).<br/>
+    <b>CTE</b> : sur une intersection, si tout est exploré on remonte, sinon on choisit l’enfant dont le <i>sous-arbre</i> contient le moins d’agents.
+  </div>
+
+  <div id="agentsPanel" class="panel"></div>
+  <canvas id="canvas"></canvas>
+
+  <script type="module">
+    // =========================
+    // Labyrinthe "grille + murs"
+    // =========================
+    const N = 1, E = 2, S = 4, W = 8;
+
+    const DIRS = [
+      { dx: 0, dy: -1, bit: N, opp: S }, // 0
+      { dx: 1, dy: 0,  bit: E, opp: W }, // 1
+      { dx: 0, dy: 1,  bit: S, opp: N }, // 2
+      { dx: -1, dy: 0, bit: W, opp: E }, // 3
+    ];
+
+    class GridMaze {
+      constructor(width, height) {
+        this.width = width;
+        this.height = height;
+        this.walls = new Uint8Array(width * height).fill(N | E | S | W);
+      }
+      idx(x, y) { return y * this.width + x; }
+      xy(i) { return [i % this.width, (i / this.width) | 0]; }
+      carve(i, j, dirIndex) {
+        const d = DIRS[dirIndex];
+        this.walls[i] &= ~d.bit;
+        this.walls[j] &= ~d.opp;
+      }
+      openNeighbors(i) {
+        const w = this.width, h = this.height;
+        const x = i % w;
+        const y = (i / w) | 0;
+        const m = this.walls[i];
+
+        const out = [];
+        if (!(m & N) && y > 0) out.push(i - w);
+        if (!(m & E) && x < w - 1) out.push(i + 1);
+        if (!(m & S) && y < h - 1) out.push(i + w);
+        if (!(m & W) && x > 0) out.push(i - 1);
+        return out;
+      }
+    }
+
+    function randInt(n) { return (Math.random() * n) | 0; }
+
+    function buildNeighborTable(w, h) {
+      const n = w * h;
+      const neigh = new Array(n);
+      for (let i = 0; i < n; i++) {
+        const x = i % w;
+        const y = (i / w) | 0;
+        const list = [];
+        for (let di = 0; di < 4; di++) {
+          const d = DIRS[di];
+          const nx = x + d.dx, ny = y + d.dy;
+          if (nx >= 0 && ny >= 0 && nx < w && ny < h) {
+            list.push([ny * w + nx, di]);
+          }
+        }
+        neigh[i] = list;
+      }
+      return neigh;
+    }
+
+    // =========================
+    // Génération Wilson (UST)
+    // =========================
+    function generateMazeWilson(w, h) {
+      const maze = new GridMaze(w, h);
+      const n = w * h;
+      const neigh = buildNeighborTable(w, h);
+
+      const inTree = new Uint8Array(n);
+      const next = new Int32Array(n).fill(-1);
+      const nextDir = new Int8Array(n).fill(-1);
+      const walkIndex = new Int32Array(n).fill(-1);
+
+      const root = randInt(n);
+      inTree[root] = 1;
+
+      const walk = [];
+
+      for (let start = 0; start < n; start++) {
+        if (inTree[start]) continue;
+
+        walk.length = 0;
+        let cur = start;
+
+        while (!inTree[cur]) {
+          const seenAt = walkIndex[cur];
+          if (seenAt !== -1) {
+            for (let t = seenAt; t < walk.length; t++) {
+              const v = walk[t];
+              walkIndex[v] = -1;
+              next[v] = -1;
+              nextDir[v] = -1;
+            }
+            walk.length = seenAt;
+          }
+
+          walkIndex[cur] = walk.length;
+          walk.push(cur);
+
+          const options = neigh[cur];
+          const [j, di] = options[randInt(options.length)];
+          next[cur] = j;
+          nextDir[cur] = di;
+          cur = j;
+        }
+
+        for (let k = 0; k < walk.length; k++) {
+          const v = walk[k];
+          const j = next[v];
+          const di = nextDir[v];
+          maze.carve(v, j, di);
+          inTree[v] = 1;
+          walkIndex[v] = -1;
+          next[v] = -1;
+          nextDir[v] = -1;
+        }
+      }
+
+      return maze;
+    }
+
+    // =========================
+    // Couleurs
+    // =========================
+    const PALETTE = [
+      "#e6194b", "#3cb44b", "#4363d8", "#f58231",
+      "#911eb4", "#46f0f0", "#f032e6", "#bcf60c",
+      "#fabebe", "#008080", "#e6beff", "#9a6324",
+    ];
+
+    function hexToRgb(hex) {
+      const h = hex.replace("#", "");
+      const n = parseInt(h, 16);
+      return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+    }
+
+    // =========================
+    // Exploration partagée : claims / visited
+    // =========================
+    let claimedBy = null;    // Int16Array: agentId du 1er visiteur, -1 sinon
+    let claimedCount = 0;
+
+    function resetClaims(nCells) {
+      claimedBy = new Int16Array(nCells);
+      claimedBy.fill(-1);
+      claimedCount = 0;
+    }
+
+    function claimCell(agentId, cellIndex) {
+      if (claimedBy[cellIndex] !== -1) return false;
+      claimedBy[cellIndex] = agentId;
+      claimedCount++;
+      return true;
+    }
+
+    // =========================
+    // Random DFS Agent
+    // =========================
+    class RandomDfsAgent {
+      constructor(id, colorHex, maze, startIndex, speed = 120) {
+        this.id = id;
+        this.colorHex = colorHex;
+        this.colorRgb = hexToRgb(colorHex);
+        this.maze = maze;
+
+        this.speed = speed;
+        this.budget = 0;
+
+        this.visited = new Uint8Array(maze.width * maze.height);
+        this.stack = [startIndex];
+        this.current = startIndex;
+        this.done = false;
+
+        this.visited[startIndex] = 1;
+      }
+
+      stepOnce() {
+        if (this.done) return;
+
+        if (this.stack.length === 0) {
+          this.done = true;
+          return;
+        }
+
+        const cur = this.stack[this.stack.length - 1];
+        this.current = cur;
+
+        const neighbors = this.maze.openNeighbors(cur);
+        const candidates = [];
+        for (let k = 0; k < neighbors.length; k++) {
+          const j = neighbors[k];
+          if (!this.visited[j]) candidates.push(j);
+        }
+
+        if (candidates.length > 0) {
+          const j = candidates[randInt(candidates.length)];
+          this.visited[j] = 1;
+          this.stack.push(j);
+          this.current = j;
+          claimCell(this.id, j);
+          return;
+        }
+
+        this.stack.pop();
+        if (this.stack.length === 0) this.done = true;
+        else this.current = this.stack[this.stack.length - 1];
+      }
+    }
+
+    // =========================
+    // CTE : arbre enraciné + compteurs
+    // =========================
+    // On construit un arbre enraciné à root (0,0). Comme le labyrinthe est un arbre, on obtient parent/children.
+    function buildRootedTree(maze, root) {
+      const n = maze.width * maze.height;
+      const parent = new Int32Array(n).fill(-1);
+      const order = [];                 // ordre BFS/DFS (pour éventuellement faire des passes)
+      const children = Array.from({ length: n }, () => []);
+
+      const q = [root];
+      parent[root] = root;
+      while (q.length) {
+        const v = q.pop();
+        order.push(v);
+        const neigh = maze.openNeighbors(v);
+        for (const u of neigh) {
+          if (parent[u] !== -1) continue;
+          parent[u] = v;
+          children[v].push(u);
+          q.push(u);
+        }
+      }
+      parent[root] = -1;
+      return { parent, children, order };
+    }
+
+    // Etat partagé CTE
+    class CteShared {
+      constructor(nCells) {
+        this.n = nCells;
+        this.subtreeAgents = new Int32Array(nCells); // #agents dans le sous-arbre du node
+        this.subtreeDone = new Uint8Array(nCells);   // 0/1
+        this.visited = new Uint8Array(nCells);       // 0/1 (exploration globale)
+        this.visitedCount = 0;
+      }
+
+      // Met à jour subtreeAgents le long des ancêtres d'un node (inclu) : delta = +1 ou -1
+      addAgentAlongAncestors(node, parent, delta) {
+        let v = node;
+        while (v !== -1) {
+          this.subtreeAgents[v] += delta;
+          v = parent[v];
+        }
+      }
+
+      markVisited(node) {
+        if (this.visited[node]) return false;
+        this.visited[node] = 1;
+        this.visitedCount++;
+        return true;
+      }
+
+      // recalcul local "done" : un node est done si
+      // - il est visité
+      // - et tous ses enfants sont done
+      tryUpdateDone(node, parent, children) {
+        // remonte tant qu'on peut (amortized OK)
+        let v = node;
+        while (v !== -1) {
+          if (!this.visited[v]) return;
+          const ch = children[v];
+          for (let i = 0; i < ch.length; i++) {
+            if (!this.subtreeDone[ch[i]]) return;
+          }
+          if (this.subtreeDone[v]) return; // déjà done, stop
+          this.subtreeDone[v] = 1;
+          v = parent[v];
+        }
+      }
+
+      allDone() {
+        return this.visitedCount >= this.n;
+      }
+    }
+
+    class CteAgent {
+      constructor(id, colorHex, maze, root, parent, children, shared, speed = 120) {
+        this.id = id;
+        this.colorHex = colorHex;
+        this.colorRgb = hexToRgb(colorHex);
+        this.maze = maze;
+
+        this.root = root;
+        this.parent = parent;
+        this.children = children;
+        this.shared = shared;
+
+        this.speed = speed;
+        this.budget = 0;
+
+        this.current = root;
+        this.done = false;
+
+        // cet agent compte dans les sous-arbres des ancêtres du root (juste root ici)
+        shared.addAgentAlongAncestors(root, parent, +1);
+
+        // visite root globalement + claim (si personne ne l’a fait)
+        if (shared.markVisited(root)) {
+          claimCell(this.id, root);
+          shared.tryUpdateDone(root, parent, children);
+        }
+      }
+
+      // Choix à l'intersection :
+      // - si tous les enfants sont done => remonter
+      // - sinon choisir un enfant non-done avec subtreeAgents minimal (tie-break aléatoire)
+      stepOnce() {
+        if (this.done) return;
+        if (this.shared.allDone()) { this.done = true; return; }
+
+        const v = this.current;
+        const ch = this.children[v];
+
+        // Si aucun enfant : feuille => remonte
+        // Si tous les enfants done => remonte
+        let best = -1;
+        let bestLoad = Infinity;
+        let ties = [];
+
+        for (let i = 0; i < ch.length; i++) {
+          const u = ch[i];
+          if (this.shared.subtreeDone[u]) continue;
+          const load = this.shared.subtreeAgents[u];
+          if (load < bestLoad) {
+            bestLoad = load;
+            ties = [u];
+          } else if (load === bestLoad) {
+            ties.push(u);
+          }
+        }
+
+        let next;
+        if (ties.length > 0) {
+          next = ties[randInt(ties.length)];
+        } else {
+          // remonter
+          next = this.parent[v];
+          if (next === -1) {
+            // on est à la racine : si rien à faire, stop
+            this.done = true;
+            return;
+          }
+        }
+
+        // déplacement : mise à jour subtreeAgents le long des ancêtres
+        this.shared.addAgentAlongAncestors(this.current, this.parent, -1);
+        this.current = next;
+        this.shared.addAgentAlongAncestors(this.current, this.parent, +1);
+
+        // si on arrive sur un nœud non encore visité globalement => le marquer + claim couleur
+        if (this.shared.markVisited(this.current)) {
+          claimCell(this.id, this.current);
+        }
+
+        // mise à jour des flags done (peut remonter)
+        this.shared.tryUpdateDone(this.current, this.parent, this.children);
+
+        if (this.shared.allDone()) this.done = true;
+      }
+    }
+
+    // =========================
+    // Rendu
+    // =========================
+    function fitCanvas(canvas, targetCssPx = 900) {
+      const dpr = window.devicePixelRatio || 1;
+      const cssW = Math.min(targetCssPx, Math.floor(document.body.clientWidth - 32));
+      const cssH = cssW;
+
+      canvas.style.width = cssW + "px";
+      canvas.style.height = cssH + "px";
+      canvas.width = Math.floor(cssW * dpr);
+      canvas.height = Math.floor(cssH * dpr);
+
+      const ctx = canvas.getContext("2d");
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      return { ctx, cssW, cssH };
+    }
+
+    function draw(canvas, maze, claimedBy, agents) {
+      const { ctx, cssW, cssH } = fitCanvas(canvas, 900);
+
+      const w = maze.width, h = maze.height;
+      const pad = 10;
+      const cell = Math.min((cssW - 2 * pad) / w, (cssH - 2 * pad) / h);
+
+      ctx.clearRect(0, 0, cssW, cssH);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, cssW, cssH);
+
+      const ox = pad, oy = pad;
+
+      // claims
+      for (let i = 0; i < claimedBy.length; i++) {
+        const aId = claimedBy[i];
+        if (aId < 0) continue;
+        const a = agents[aId];
+        if (!a) continue;
+
+        const x = i % w;
+        const y = (i / w) | 0;
+        ctx.fillStyle = `rgba(${a.colorRgb.r}, ${a.colorRgb.g}, ${a.colorRgb.b}, 0.18)`;
+        ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+      }
+
+      // murs
+      ctx.lineWidth = Math.max(1, cell * 0.08);
+      ctx.lineCap = "square";
+      ctx.strokeStyle = "#111";
+
+      const px = ox + 0.5;
+      const py = oy + 0.5;
+
+      ctx.beginPath();
+      for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = y * w + x;
+          const m = maze.walls[i];
+          const x0 = px + x * cell;
+          const y0 = py + y * cell;
+          const x1 = x0 + cell;
+          const y1 = y0 + cell;
+
+          if (m & N) { ctx.moveTo(x0, y0); ctx.lineTo(x1, y0); }
+          if (m & W) { ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); }
+          if (x === w - 1 && (m & E)) { ctx.moveTo(x1, y0); ctx.lineTo(x1, y1); }
+          if (y === h - 1 && (m & S)) { ctx.moveTo(x0, y1); ctx.lineTo(x1, y1); }
+        }
+      }
+      ctx.stroke();
+
+      // agents
+      for (const a of agents) {
+        const i = a.current;
+        const x = i % w;
+        const y = (i / w) | 0;
+
+        const cx = ox + x * cell + cell * 0.5;
+        const cy = oy + y * cell + cell * 0.5;
+        const r = Math.max(3, cell * 0.18);
+
+        ctx.fillStyle = `rgba(${a.colorRgb.r}, ${a.colorRgb.g}, ${a.colorRgb.b}, 0.25)`;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r * 1.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = a.colorHex;
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.9)";
+        ctx.lineWidth = Math.max(1, cell * 0.06);
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      // marqueur départ (haut gauche)
+      ctx.fillStyle = "rgba(0,0,0,0.6)";
+      const sx = 0, sy = 0;
+      ctx.beginPath();
+      ctx.arc(ox + sx * cell + cell * 0.25, oy + sy * cell + cell * 0.25, Math.max(2, cell * 0.12), 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // =========================
+    // UI agents
+    // =========================
+    const sizeInput = document.getElementById("size");
+    const algoSelect = document.getElementById("algo");
+    const btnGenerate = document.getElementById("generate");
+    const btnRestart = document.getElementById("restart");
+    const agentCountInput = document.getElementById("agentCount");
+    const btnApplyAgents = document.getElementById("applyAgents");
+    const agentsPanel = document.getElementById("agentsPanel");
+    const canvas = document.getElementById("canvas");
+
+    let maze = null;
+    let agents = [];
+    let lastT = performance.now();
+
+    // CTE-only shared + rooted tree
+    let cteTree = null;     // { parent, children, order }
+    let cteShared = null;   // CteShared
+
+    function buildAgentsUI() {
+      agentsPanel.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "small";
+      header.textContent = "Vitesses par agent :";
+      agentsPanel.appendChild(header);
+
+      agents.forEach((a) => {
+        const row = document.createElement("div");
+        row.className = "agentRow";
+
+        const sw = document.createElement("div");
+        sw.className = "swatch";
+        sw.style.background = a.colorHex;
+
+        const name = document.createElement("span");
+        name.textContent = `Agent ${a.id + 1}`;
+        name.style.fontWeight = "600";
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = "0";
+        slider.max = "50";
+        slider.step = "1";
+        slider.value = String(a.speed);
+
+        const valPill = document.createElement("span");
+        valPill.className = "pill";
+        valPill.textContent = `${a.speed} / s`;
+
+        slider.addEventListener("input", () => {
+          a.speed = Number(slider.value) || 0;
+          valPill.textContent = `${a.speed} / s`;
+        });
+
+        const status = document.createElement("span");
+        status.className = "small";
+        status.textContent = a.done ? "✓ terminé" : "… explore";
+        row._statusEl = status;
+
+        row.appendChild(sw);
+        row.appendChild(name);
+        row.appendChild(slider);
+        row.appendChild(valPill);
+        row.appendChild(status);
+        agentsPanel.appendChild(row);
+      });
+    }
+
+    function updateAgentsStatusUI() {
+      const rows = agentsPanel.querySelectorAll(".agentRow");
+      rows.forEach((row, i) => {
+        const statusEl = row._statusEl;
+        if (!statusEl) return;
+        statusEl.textContent = agents[i].done ? "✓ terminé" : "… explore";
+      });
+    }
+
+    // =========================
+    // Construction des agents selon algo
+    // =========================
+    function createAgents(count, algo) {
+      const nCells = maze.width * maze.height;
+      resetClaims(nCells);
+
+      const start = maze.idx(0, 0); // haut gauche pour tous
+      agents = [];
+
+      if (algo === "cte") {
+        // construire arbre enraciné + shared
+        cteTree = buildRootedTree(maze, start);
+        cteShared = new CteShared(nCells);
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const a = new CteAgent(i, color, maze, start, cteTree.parent, cteTree.children, cteShared, 20);
+          agents.push(a);
+        }
+      } else {
+        // random dfs (local)
+        cteTree = null;
+        cteShared = null;
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const a = new RandomDfsAgent(i, color, maze, start, 20);
+          // claim start
+          claimCell(a.id, start);
+          agents.push(a);
+        }
+      }
+
+      buildAgentsUI();
+      draw(canvas, maze, claimedBy, agents);
+
+      lastT = performance.now();
+      agents.forEach(a => a.budget = 0);
+    }
+
+    function restartExploration() {
+      if (!maze) return;
+      const count = agents.length || Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      createAgents(count, algoSelect.value);
+    }
+
+    function generateNewMaze() {
+      let n = Number(sizeInput.value);
+      if (!Number.isFinite(n)) n = 30;
+      n = Math.max(2, Math.min(250, Math.floor(n)));
+
+      maze = generateMazeWilson(n, n);
+
+      const count = Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      createAgents(count, algoSelect.value);
+    }
+
+    btnGenerate.addEventListener("click", generateNewMaze);
+    btnRestart.addEventListener("click", restartExploration);
+
+    btnApplyAgents.addEventListener("click", () => {
+      if (!maze) return;
+      const count = Math.max(1, Math.min(12, Number(agentCountInput.value) || 1));
+      createAgents(count, algoSelect.value);
+    });
+
+    algoSelect.addEventListener("change", () => {
+      // garder labyrinthe, mais changer algo => restart
+      if (!maze) return;
+      restartExploration();
+    });
+
+    window.addEventListener("resize", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
+
+    // =========================
+    // Loop simulation
+    // =========================
+    function allDone() {
+      if (algoSelect.value === "cte") return cteShared?.allDone() ?? false;
+      // sinon: considéré terminé quand toutes les cellules sont claim (global)
+      return claimedCount >= claimedBy.length;
+    }
+
+    function tick(t) {
+      const dt = Math.max(0, (t - lastT) / 1000);
+      lastT = t;
+
+      if (maze && agents.length > 0 && !allDone()) {
+        const maxStepsPerFramePerAgent = 2500;
+
+        for (const a of agents) {
+          if (a.done) continue;
+
+          a.budget += dt * a.speed;
+          const stepsToDo = Math.min(maxStepsPerFramePerAgent, Math.floor(a.budget));
+
+          for (let k = 0; k < stepsToDo && !a.done; k++) {
+            a.stepOnce();
+          }
+
+          a.budget -= stepsToDo;
+        }
+      }
+
+      if (maze) {
+        draw(canvas, maze, claimedBy, agents);
+        updateAgentsStatusUI();
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    // init
+    generateNewMaze();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>
