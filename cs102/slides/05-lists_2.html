@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Lists</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## Lists (Doubly Linked Lists)
+
+.author[
+Instructor: Romain Cosson <br><br><br>
+]
+
+.license[
+Copyright 2020 J. Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: poll
+class: inverse, full-height, center, middle
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; J. Klukowska (mod. R.C.). CC-BY-SA.]
+
+---
+
+template: section
+
+# Other _Flavors_ of a Linked List
+
+---
+
+## Other _Flavors_ of a Linked List
+
+In a __singly linked list__
+- there is a single reference from a node to the node that follows, and
+- the last node's reference is set to `null`.
+
+--
+
+In a __doubly linked list__
+- each node has two references, one to the next node and one to the previous node
+- dummy nodes called `header` and `trailer` are often added on the two extremes of the list
+
+--
+
+In a __circular linked list__ 
+- the last node is connected back to the first node
+- they could be singly- or doubly linked.
+
+---
+
+## Doubly Linked List
+
+
+.center[
+<img alt="doubly linked list "  width="700"  src="img/05/doubly-linked-61.jpg"/>
+]
+
+--
+
+.right-column2[
+```java
+class Node<E> {
+    E data;
+    Node<E> next;
+    Node<E> prev;
+}
+```
+
+<img alt="nodes in doubly linked list "  width="100%" src="img/05/doubly-linked-62.jpg"/>
+]
+
+--
+
+- Java's default `LinkedList<E>` class uses a doubly linked list implementation.
+
+--
+
+- Some operations become more efficient.
+
+--
+
+ - e.g., get to before-last element. 
+
+
+--
+
+- Quiz: which operation becomes more efficient?  https://www.PollEv.com/cosson
+
+
+--
+
+- Code-study: implement `public E get(int i)` and `public void add(E e, int i)` to the DoublyLinkedList class provided
+
+---
+
+## Circular Linked List
+
+.left-column2[
+
+<img alt="circular singly linked list" width=120% src="img/05/circular-63.jpg" />
+
+]
+.right-column2[
+Circular __singly__ linked list.
+
+- there is a single reference in each node pointing to the next node
+- the last node's reference, points back to the first node
+]
+
+--
+
+.below-column2[
+
+]
+
+.left-column2[
+
+<img alt="circular doubly linked list" width=120% src="img/05/circular-64.jpg" />
+
+]
+.right-column2[
+Circular __doubly__ linked list.
+
+- there two references between a pair of any nodes: one pointing forward,
+the other pointing back
+- the last node's `next` reference, points back to the first node
+- the first node's `prev` reference, points to the last node
+]
+
+---
+
+template: section
+
+# Defining and Iterator for our LinkedList
+
+---
+
+## Why do we need iterators?
+
+An iterator is an object that allows us to traverse a collection (data structure)
+and visit each element exactly once. <!--__Objective:__ be able to return the _next_ element fast, i.e., in O(1), so that the
+entire collection can be traversed in O(N) time.-->
+
+--
+
+In Java, a collection that can be traversed is called an `Iterable`. There is a Java interface that roughly looks like this:
+
+```java
+public interface Iterable<E> {
+    Iterator<E> iterator();
+}``` 
+
+--
+
+The main requirement of `Iterable` is that you can return an `Iterator`. `Iterator<E>` is also a Java interface, looking like this: 
+
+```java
+public interface Iterator<E> {
+    boolean hasNext();
+    E next(); // throws NoSuchElementException if none
+}
+```
+
+--
+
+If `myList` is an object of a class that implements `Iterable<E>`, then you can use the following syntax to iterate over its elements:
+```java
+for (E e: myList) {
+    // do something with e
+}``` 
+
+---
+name: why-arraylist
+## Why do we need iterators?
+
+Here is an example of iterating over an `ArrayList<E>` object using an ordinary
+    `for` loop and the `get(index)` method and using an iterator.
+
+```java
+ArrayList<String> aL = new ArrayList<String>(...);
+
+
+System.out.println("Using for loop with .get() method" );
+for (int i = 0; i < aL.size(); i++ ) {
+    System.out.println(aL.get(i));
+}
+
+System.out.println("Using an iterator" );
+Iterator<String> itr = aL.iterator();
+while (itr.hasNext()){
+    System.out.println(itr.next() );
+}
+```
+--
+What is the performance of each method?
+- using or loop with .get() method
+- using an iterator
+
+---
+template: why-arraylist
+
+What is the performance of each method?
+- using or loop with .get() method   __O(N)__
+- using an iterator  __O(N)__
+
+
+
+
+---
+name: why-linkedlist
+## Why do we need iterators?
+
+Here is an example of iterating over an `LinkedList<E>` object using an ordinary
+    `for` loop and the `get(index)` method and using an iterator.
+
+```java
+LinkedList<String> lL = new LinkedList<String>(...);
+
+System.out.println("Using for loop with .get() method" );
+for (int i = 0; i < lL.size(); i++ ) {
+    System.out.println(lL.get(i));
+}
+
+System.out.println("Using an iterator" );
+Iterator<String> itr = lL.iterator();
+itr = lL.iterator();
+while (itr.hasNext()){
+    System.out.println(itr.next() );
+}
+```
+--
+What is the performance of each method?
+- using or loop with .get() method
+- using an iterator
+
+
+
+
+---
+template: why-linkedlist
+
+What is the performance of each method?
+- using or loop with .get() method   __O(N<sup>2</sup>)__ (because the `get()` method takes O(N) time)
+- using an iterator  __O(N)__
+
+
+---
+## An Iterator for a Linked List
+
+Here is a __very simple__ iterator that satisfies the [`Iterator<E>` interface](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Iterator.html):
+
+
+```java
+private class Itr implements Iterator<E> {// Private class: nested 
+    private Node current = head; // Instance variable of nested class directly initialized 
+    public boolean hasNext() {
+        return current != null;
+    }
+    public E next()
+    {   
+        if (current == null ) throw new NoSuchElementException("no elements left to visit");
+        E tmp = current.data;
+        current = current.next;
+        return tmp;
+    }
+}
+```
+
+--
+
+To make `LinkedList<E>` itself `Iterable`, we need to 
+- say that it implements the `Iterable<E>` interface, and
+- add our custom `Itr` class as a nested (private) class in `LinkedList<E>`
+- add the following method to `LinkedList<E>`
+
+```java
+public Iterator<E> iterator() {
+    return new Itr();
+}
+```
+
+
+
+---
+
+template:section
+
+# Examples and Things to Think About
+
+---
+
+## `LinkedList<E>` source code
+
+Study the source code of _the real_ doubly linked list implementation provided by
+the `LinkedList<E>` class in Java.
+
+You should be able to understand what it does and why.
+
+https://github.com/openjdk/jdk/blob/master/src/java.base/share/classes/java/util/LinkedList.java
+
+---
+
+## Is it circular?
+
+Given a reference to the first node, i.e. `head` determine if the list is circular or not.
+
+- case 1: assume that there is a `tail` reference pointing to the last node
+- case 2: assume that there is no `tail` reference
+
+What is the performance of these two methods.
+
+---
+<!--- remark js is pick: nothing after --  -->
+## Can you print the list in reverse order efficiently?
+
+- In a doubly linked list how fast can you print the elements in reverse order? 
+
+--
+
+  - In O(N) time, by starting from the `tail`. 
+
+--
+
+- Could you do it in O(N) time for a singly linked list? 
+
+--
+
+  - Yes (think recursively). 
+
+--
+
+- Can you do it without recursion? 
+
+--
+
+  - Yes: but with access to a O(N) array (or a stack): O(N) "time complexity" and O(N) "space complexity".
+
+--
+
+- Can you do it without recursion and without access to an array?
+
+--
+
+  - Not in O(N) "time" and O(1) "space" like for doubly linked list. 
+
+  - You could do it in O(N<sup>2</sup>) "time" and O(1) "space", by repeatedly traversing the list to find the last element, then the second to last element, etc.
+
+
+--
+
+__Surprising lesson:__ sometimes you can "trade time for space" and vice versa. 
+
+---
+## What will this code output?
+
+Assume that we execute the following code fragment. What is the output?
+
+```java
+
+ArrayList<String> aL = new ArrayList<>();
+String [] strings = {"hello", "big", "pink", "cat"};
+for (int i = 0; i < strings.length; i++) {
+    aL.add(strings[i]);
+}
+
+Iterator<String> itr = aL.iterator();
+System.out.println(itr.next() );
+itr.next();
+System.out.println(itr.next() );
+
+Iterator<String> itr1 = aL.iterator();
+Iterator<String> itr2 = aL.iterator();
+System.out.println(itr1.next());
+System.out.println(itr2.next());
+
+System.out.println(itr.next());
+
+
+```
+
+--
+The output is: 
+ - hello
+ - pink
+ - hello
+ - hello 
+ - cat
+
+</optgroup>
+
+
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
+        <script type="text/javascript">
+          var slideshow = remark.create();
+
+          // Setup MathJax
+          MathJax.Hub.Config({
+              tex2jax: {
+              skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+                inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                processEscapes: true
+              }
+          });
+
+          MathJax.Hub.Configured();
+        </script>
+
+
+
+  </body>
+</html>
