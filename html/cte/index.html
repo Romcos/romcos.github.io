@@ -72,8 +72,8 @@
         </label>
 
         <label>
-          Agents
-          <input id="agentCount" type="number" min="1" max="30" value="10" />
+          Agents (k)
+          <input id="agentCount" type="number" min="1" max="30" value="3" />
         </label>
 
         <label>
@@ -94,16 +94,19 @@
       </div>
 
       <div class="hint">
-      Algorithms: <br/>
-        <b>Random DFS</b> : DFS with random choice of next visited neighbour. No-communication algorithm (slower).<br/>
-        <b>CTE</b> [FGKP06]'s distributed algorithm. Agents go to nearest unfinished subtree, breaking ties with lead loaded. Distributed communications. <br/>
-        <b>BFDN</b> TODO<br/>
-        <b>Potential algo [CM24]</b> TODO<br/>
-        <b>OPT</b> TODO
+       - Maze generation: <br/>
+      <b>Wilson</b> : uniform spanning tree, D ~ n^(1/2). <br/>
+      <b>Recursive DFS</b> : longer paths, D ~ n^(5/8).<br/>
+      <b>Comb</b> : difficult for CTE.
+      <br/><br/>
+       - Algorithms: <br/>
+        <b>Random DFS</b> independent DFSss with random tie-breaking. No-communication.<br/>
+        <b>CTE</b> [FGKP06]'s greedy algorithm. Agents go to nearest unfinished subtree. Distributed communications. <br/>
+        <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
+        <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
         <br/><br/>
-      Maze generation: <br/>
-        <b>Wilson</b> : uniform spanning tree, typical depth is n^(1/2). <br/>
-        <b>Recursive DFS</b> : longer paths, harder to parallelize well (CTE does not do so well). Typical depth is n^(5/8)
+       - Suggested parameters: <br/>
+      Try with large number of robots an high speeds to see nice patterns emerge. 
       </div>
 
       <div id="timerPanel" class="panel">
