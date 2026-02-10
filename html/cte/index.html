@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Labyrinthe + Multi Agents (Random DFS / CTE)</title>
+  <title>Multi Agent Maze Exploration / Collective Tree Exploration</title>
   <!-- Copyright (c) 2026 Romain — see LICENSE for terms. -->
 
 <!-- 
@@ -68,6 +68,15 @@
             <option value="wilson">Wilson (UST)</option>
             <option value="dfs">Recursive DFS</option>
             <option value="comb">Comb</option>
+            <option value="binary_tree">Binary Tree</option>
+            <!--
+            <option value="kruskal">Kruskal</option>
+            <option value="sidewinder">Sidewinder</option>
+            <option value="eller">Eller</option>
+            <option value="prim">Prim</option>
+            <option value="hunt_and_kill">Hunt and Kill</option>
+            <option value="spine_branches">Spine + Branches</option>
+            -->
           </select>
         </label>
 
@@ -80,8 +89,14 @@
           Exploration Algorithm
           <select id="algo">
             <option value="random_dfs">Random DFS</option>
-            <option value="cte">CTE (FGKP)</option>
-            <option value="opt">2OPT (not fully operational yet)</option>
+            <option value="cte">CTE</option>
+            <option value="lga3">LGA (v3)</option>
+            <option value="opt">2OPT</option>
+            <!--
+            <option value="lga">LGA (Locally Greedy)</option>
+            <option value="lga2">LGA2 (Locally Greedy v2)</option>
+            <option value="lga4">LGA4 (Locally Greedy v4)</option>
+            -->
           </select>
         </label>
 
@@ -97,14 +112,32 @@
        - Maze generation: <br/>
       <b>Wilson</b> : uniform spanning tree, D ~ N. <br/>
       <b>Recursive DFS</b> : longer paths, D ~ N^(5/4).<br/>
-      <b>Comb</b> : difficult for CTE.
+      <b>Comb</b> : difficult for CTE.<br/>
+      <b>Binary Tree</b> : biased carving (north/east), diagonal flows.
+      <!--
+      <b>Kruskal</b> : randomized Kruskal, bushier with many short branches.
+      <b>Sidewinder</b> : long horizontal corridors with occasional vertical links.
+      <b>Eller</b> : row-by-row merges with guaranteed vertical links per set.
+      <b>Prim</b> : randomized Prim, bushy with many short branches.
+      <b>Hunt and Kill</b> : long runs with periodic hunts for new starts.
+      <b>Spine + Branches</b> : biased spine with a few long offshoots.
+      -->
       <br/><br/>
        - Algorithms: <br/>
-        <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br/>
-        <b>CTE</b> [FGKP06]'s greedy algorithm. Agents go to nearest unfinished subtree. Distributed communications. <br/>
-        <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
-        <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
-        <br/><br/>
+      <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br/>
+      <b>CTE</b> Greedy algorithm. Agents go to nearest unfinished subtree. Accelerated version (using complete communications). <br/>
+      <b>LGA</b> Locally greedy v3: reanchor with shared anchor counts.<br/>
+      <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
+      <!--
+      <b>LGA</b> First naive locally greedy implementation: reanchor to shallowest frontier node.<br/>
+      <b>LGA2</b> Locally greedy v2: reanchor by minimizing lambda * depth(v) + dist(u,v).<br/>
+      <b>LGA3</b> Locally greedy v3: reanchor with shared anchor counts.<br/>
+      <b>LGA4</b> Locally greedy v4: reanchor with shared anchor counts (log variant).<br/>
+      
+      <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
+      <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
+      -->
+      <br/><br/>
        - Suggested parameters: Try with large number of robots (up to 30), high speeds, and large N (up to 300) to see nice patterns emerge. 
       </div>
 
@@ -142,6 +175,33 @@
         <label style="display:block; margin-top:8px;">
           <input type="checkbox" id="chkShadeDoneSubtrees" />
           Shade done subtrees (CTE)
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShadeUnvisited" />
+          Shade unvisited nodes
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkHighlightDepth" />
+          Highlight depth
+          <input id="depthLevel" type="number" min="0" step="1" value="0" style="margin-left:6px; width:80px;" />
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShowLca" />
+          Show LCA
+          <input id="lcaU" type="number" min="0" step="1" value="0" style="margin-left:6px; width:80px;" />
+          <input id="lcaV" type="number" min="0" step="1" value="0" style="margin-left:6px; width:80px;" />
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShowFrontier" />
+          Show frontier nodes
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <span>Lambda (LGA2)</span>
+          <input id="lgaLambda" type="number" min="0" step="0.1" value="1" style="margin-left:6px; width:80px;" />
+        </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShowAnchorCounts" />
+          Show x (anchor counts)
         </label>
       </div>
     </div>
@@ -331,6 +391,397 @@
         return maze;
       }
 
+      static generateKruskal(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+
+        const parent = new Int32Array(n);
+        const rank = new Int8Array(n);
+        for (let i = 0; i < n; i++) parent[i] = i;
+
+        const find = (x) => {
+          let r = x;
+          while (parent[r] !== r) r = parent[r];
+          while (parent[x] !== x) {
+            const p = parent[x];
+            parent[x] = r;
+            x = p;
+          }
+          return r;
+        };
+
+        const unite = (a, b) => {
+          let ra = find(a);
+          let rb = find(b);
+          if (ra === rb) return false;
+          if (rank[ra] < rank[rb]) {
+            parent[ra] = rb;
+          } else if (rank[ra] > rank[rb]) {
+            parent[rb] = ra;
+          } else {
+            parent[rb] = ra;
+            rank[ra]++;
+          }
+          return true;
+        };
+
+        const edges = [];
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const i = y * w + x;
+            if (x + 1 < w) edges.push([i, i + 1, 1]); // east
+            if (y + 1 < h) edges.push([i, i + w, 2]); // south
+          }
+        }
+
+        for (let i = edges.length - 1; i > 0; i--) {
+          const j = randInt(i + 1);
+          const tmp = edges[i];
+          edges[i] = edges[j];
+          edges[j] = tmp;
+        }
+
+        for (let k = 0; k < edges.length; k++) {
+          const [a, b, di] = edges[k];
+          if (unite(a, b)) maze.carve(a, b, di);
+        }
+
+        return maze;
+      }
+
+      static generateSidewinder(w, h) {
+        const maze = new GridMaze(w, h);
+
+        const idx = (x, y) => y * w + x;
+        const EAST = 1;
+        const NORTH = 0;
+
+        for (let y = 0; y < h; y++) {
+          let runStart = 0;
+          for (let x = 0; x < w; x++) {
+            const atEastBoundary = x === w - 1;
+            const atNorthBoundary = y === 0;
+
+            const carveEast = !atEastBoundary && (atNorthBoundary || Math.random() < 0.5);
+
+            if (carveEast) {
+              const a = idx(x, y);
+              const b = idx(x + 1, y);
+              maze.carve(a, b, EAST);
+            } else {
+              if (!atNorthBoundary) {
+                const rx = runStart + randInt(x - runStart + 1);
+                const a = idx(rx, y);
+                const b = idx(rx, y - 1);
+                maze.carve(a, b, NORTH);
+              }
+              runStart = x + 1;
+            }
+          }
+        }
+
+        return maze;
+      }
+
+      static generateEller(w, h) {
+        const maze = new GridMaze(w, h);
+        const EAST = 1;
+        const SOUTH = 2;
+
+        let nextSetId = 1;
+        let sets = new Int32Array(w);
+        for (let x = 0; x < w; x++) sets[x] = nextSetId++;
+
+        const ensureSet = (x) => {
+          if (sets[x] === 0) sets[x] = nextSetId++;
+        };
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) ensureSet(x);
+
+          if (y === h - 1) {
+            for (let x = 0; x < w - 1; x++) {
+              if (sets[x] !== sets[x + 1]) {
+                const a = y * w + x;
+                const b = y * w + x + 1;
+                maze.carve(a, b, EAST);
+                const oldId = sets[x + 1];
+                const newId = sets[x];
+                for (let k = 0; k < w; k++) {
+                  if (sets[k] === oldId) sets[k] = newId;
+                }
+              }
+            }
+            break;
+          }
+
+          for (let x = 0; x < w - 1; x++) {
+            if (sets[x] === sets[x + 1]) continue;
+            if (Math.random() < 0.5) {
+              const a = y * w + x;
+              const b = y * w + x + 1;
+              maze.carve(a, b, EAST);
+              const oldId = sets[x + 1];
+              const newId = sets[x];
+              for (let k = 0; k < w; k++) {
+                if (sets[k] === oldId) sets[k] = newId;
+              }
+            }
+          }
+
+          const down = new Int32Array(w);
+          for (let x = 0; x < w; x++) down[x] = 0;
+
+          let x = 0;
+          while (x < w) {
+            const setId = sets[x];
+            let runStart = x;
+            while (x < w && sets[x] === setId) x++;
+            const runEnd = x - 1;
+
+            let hasDown = false;
+            for (let i = runStart; i <= runEnd; i++) {
+              if (Math.random() < 0.5) {
+                const a = y * w + i;
+                const b = (y + 1) * w + i;
+                maze.carve(a, b, SOUTH);
+                down[i] = setId;
+                hasDown = true;
+              }
+            }
+            if (!hasDown) {
+              const i = runStart + randInt(runEnd - runStart + 1);
+              const a = y * w + i;
+              const b = (y + 1) * w + i;
+              maze.carve(a, b, SOUTH);
+              down[i] = setId;
+            }
+          }
+
+          sets = down;
+        }
+
+        return maze;
+      }
+
+      static generatePrim(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+        const neigh = buildNeighborTable(w, h);
+        const inTree = new Uint8Array(n);
+        const frontier = [];
+
+        const start = randInt(n);
+        inTree[start] = 1;
+        for (const [j, di] of neigh[start]) {
+          frontier.push([start, j, di]);
+        }
+
+        while (frontier.length) {
+          const k = randInt(frontier.length);
+          const [a, b, di] = frontier[k];
+          const last = frontier.length - 1;
+          frontier[k] = frontier[last];
+          frontier.pop();
+
+          if (inTree[b]) continue;
+          maze.carve(a, b, di);
+          inTree[b] = 1;
+          for (const [j, dj] of neigh[b]) {
+            if (!inTree[j]) frontier.push([b, j, dj]);
+          }
+        }
+
+        return maze;
+      }
+
+      static generateBinaryTree(w, h) {
+        const maze = new GridMaze(w, h);
+        const EAST = 1;
+        const NORTH = 0;
+
+        for (let y = 0; y < h; y++) {
+          for (let x = 0; x < w; x++) {
+            const atNorth = y === 0;
+            const atEast = x === w - 1;
+            if (atNorth && atEast) continue;
+            if (atNorth) {
+              const a = y * w + x;
+              const b = y * w + x + 1;
+              maze.carve(a, b, EAST);
+              continue;
+            }
+            if (atEast) {
+              const a = y * w + x;
+              const b = (y - 1) * w + x;
+              maze.carve(a, b, NORTH);
+              continue;
+            }
+            if (Math.random() < 0.5) {
+              const a = y * w + x;
+              const b = y * w + x + 1;
+              maze.carve(a, b, EAST);
+            } else {
+              const a = y * w + x;
+              const b = (y - 1) * w + x;
+              maze.carve(a, b, NORTH);
+            }
+          }
+        }
+
+        return maze;
+      }
+
+      static generateHuntAndKill(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+        const neigh = buildNeighborTable(w, h);
+        const visited = new Uint8Array(n);
+
+        let current = randInt(n);
+        visited[current] = 1;
+        let visitedCount = 1;
+
+        while (visitedCount < n) {
+          const options = neigh[current].filter(([j]) => !visited[j]);
+          if (options.length > 0) {
+            const [next, di] = options[randInt(options.length)];
+            maze.carve(current, next, di);
+            current = next;
+            visited[current] = 1;
+            visitedCount++;
+            continue;
+          }
+
+          let found = -1;
+          for (let i = 0; i < n; i++) {
+            if (visited[i]) continue;
+            const opts = neigh[i].filter(([j]) => visited[j]);
+            if (opts.length === 0) continue;
+            const [j, di] = opts[randInt(opts.length)];
+            maze.carve(i, j, di);
+            visited[i] = 1;
+            visitedCount++;
+            found = i;
+            break;
+          }
+
+          if (found === -1) break;
+          current = found;
+        }
+
+        return maze;
+      }
+
+      static generateSpineBranches(w, h) {
+        const maze = new GridMaze(w, h);
+        const n = w * h;
+        const neigh = buildNeighborTable(w, h);
+        const visited = new Uint8Array(n);
+
+        const idx = (x, y) => y * w + x;
+        const toXY = (i) => [i % w, (i / w) | 0];
+
+        const targetSpine = Math.max(2, Math.min(n, Math.floor(4 * Math.max(w, h))));
+        const biasProb = 0.75; // bias toward +x, +y
+
+        const pickBiasedNeighbor = (cur, options, biasDx, biasDy) => {
+          if (options.length === 1) return options[0];
+          if (Math.random() > biasProb) return options[randInt(options.length)];
+          const [cx, cy] = toXY(cur);
+          const preferred = [];
+          for (let i = 0; i < options.length; i++) {
+            const [j, di] = options[i];
+            const [nx, ny] = toXY(j);
+            const dx = nx - cx;
+            const dy = ny - cy;
+            if ((biasDx === 1 && dx > 0) || (biasDx === -1 && dx < 0) ||
+                (biasDy === 1 && dy > 0) || (biasDy === -1 && dy < 0)) {
+              preferred.push(options[i]);
+            }
+          }
+          return preferred.length ? preferred[randInt(preferred.length)] : options[randInt(options.length)];
+        };
+
+        // Build a biased spine from top-left
+        let current = idx(0, 0);
+        visited[current] = 1;
+        const spine = [current];
+
+        while (spine.length < targetSpine) {
+          const options = neigh[current].filter(([j]) => !visited[j]);
+          if (options.length === 0) {
+            let found = -1;
+            for (let i = spine.length - 1; i >= 0; i--) {
+              const v = spine[i];
+              const opts = neigh[v].filter(([j]) => !visited[j]);
+              if (opts.length) {
+                current = v;
+                found = v;
+                break;
+              }
+            }
+            if (found === -1) break;
+            continue;
+          }
+          const [next, di] = pickBiasedNeighbor(current, options, 1, 1);
+          maze.carve(current, next, di);
+          current = next;
+          visited[current] = 1;
+          spine.push(current);
+        }
+
+        // Add a few long branches off the spine (biased to top-right or bottom-left)
+        const targetBranch = Math.max(2, Math.min(n, Math.floor(Math.max(w, h))));
+        const numBranches = Math.max(2, Math.round(Math.max(w, h) / 8));
+        const spineCandidates = spine.slice(1, Math.max(2, spine.length - 1));
+
+        for (let b = 0; b < numBranches && spineCandidates.length; b++) {
+          const pick = randInt(spineCandidates.length);
+          const start = spineCandidates[pick];
+          spineCandidates[pick] = spineCandidates[spineCandidates.length - 1];
+          spineCandidates.pop();
+
+          const branchBias = Math.random() < 0.5 ? [-1, -1] : [1, -1];
+          let cur = start;
+          let steps = 0;
+          while (steps < targetBranch) {
+            const options = neigh[cur].filter(([j]) => !visited[j]);
+            if (options.length === 0) break;
+            const [next, di] = pickBiasedNeighbor(cur, options, branchBias[0], branchBias[1]);
+            maze.carve(cur, next, di);
+            cur = next;
+            visited[cur] = 1;
+            steps++;
+          }
+        }
+
+        // Fill remaining cells using a Prim-like frontier growth
+        const frontier = [];
+        for (let i = 0; i < n; i++) {
+          if (!visited[i]) continue;
+          for (const [j, di] of neigh[i]) {
+            if (!visited[j]) frontier.push([i, j, di]);
+          }
+        }
+
+        while (frontier.length) {
+          const k = randInt(frontier.length);
+          const [a, b, di] = frontier[k];
+          frontier[k] = frontier[frontier.length - 1];
+          frontier.pop();
+
+          if (visited[b]) continue;
+          maze.carve(a, b, di);
+          visited[b] = 1;
+          for (const [j, dj] of neigh[b]) {
+            if (!visited[j]) frontier.push([b, j, dj]);
+          }
+        }
+
+        return maze;
+      }
+
     }
 
     function randInt(n) { return (Math.random() * n) | 0; }
@@ -449,6 +900,158 @@
     }
 
     // =========================
+    // LGA: Locally Greedy Agent (policy-driven)
+    // =========================
+    class LgaAgent {
+      constructor(id, colorHex, maze, startIndex, sharedVisited, reanchorPolicy, speed = 120, useAnchorCounts = false) {
+        this.id = id;
+        this.colorHex = colorHex;
+        this.colorRgb = hexToRgb(colorHex);
+        this.maze = maze;
+        this.sharedVisited = sharedVisited || null;
+        this.reanchorPolicy = reanchorPolicy || null;
+        this.useAnchorCounts = useAnchorCounts;
+
+        this.speed = speed;
+        this.budget = 0;
+
+        this.visited = new Uint8Array(maze.width * maze.height);
+        this.stack = [startIndex];
+        this.current = startIndex;
+        this.done = false;
+        this.reanchoring = false;
+        this.reanchorPath = null;
+        this.reanchorIndex = 0;
+        this.anchorNode = startIndex;
+
+        this.visited[startIndex] = 1;
+        if (this.useAnchorCounts && lgaAnchorCounts && cteTree) {
+          addAnchorCounts(this.anchorNode, cteTree.parent, lgaAnchorCounts, 1);
+        }
+      }
+
+      _hasUnvisitedNeighbor(i) {
+        const neighbors = this.maze.openNeighbors(i);
+        for (let k = 0; k < neighbors.length; k++) {
+          const j = neighbors[k];
+          if (this.visited[j]) continue;
+          if (this.sharedVisited && this.sharedVisited[j]) continue;
+          return true;
+        }
+        return false;
+      }
+
+      reanchor() {
+        // if all cells are completed, do nothing
+        if (claimedCount >= claimedBy.length) return;
+
+        // ensure parent/depth tables
+        if (!cteTree) {
+          const root = this.maze.idx(0, 0);
+          cteTree = buildRootedTree(this.maze, root);
+        }
+        if (!depthFromRoot) {
+          const root = this.maze.idx(0, 0);
+          depthFromRoot = computeDepths(this.maze, root);
+        }
+
+        let best = -1;
+        if (this.reanchorPolicy) {
+          const lambdaVal = lgaLambdaInput ? Number(lgaLambdaInput.value) : 1;
+          best = this.reanchorPolicy({
+            agent: this,
+            maze: this.maze,
+            parent: cteTree.parent,
+            depth: depthFromRoot,
+            claimedBy,
+            lambda: lambdaVal,
+            counts: lgaAnchorCounts
+          });
+        }
+        if (best === -1 || best === null || best === undefined) return;
+
+        if (this.useAnchorCounts && lgaAnchorCounts) {
+          updateAnchorCounts(this.anchorNode, best, cteTree.parent, depthFromRoot, lgaAnchorCounts);
+          this.anchorNode = best;
+        }
+
+        const path = shortestPathViaLca(this.current, best, cteTree.parent, depthFromRoot);
+        if (!path || path.length === 0) return;
+
+        this.reanchoring = true;
+        this.reanchorPath = path;
+        this.reanchorIndex = 0;
+        this.stack = path.slice();
+      }
+
+      stepOnce() {
+        if (this.done) return;
+
+        if (this.reanchoring && this.reanchorPath) {
+          if (this.reanchorIndex < this.reanchorPath.length - 1) {
+            this.reanchorIndex++;
+            const nxt = this.reanchorPath[this.reanchorIndex];
+            this.current = nxt;
+            if (!this.visited[nxt]) this.visited[nxt] = 1;
+            if (this.sharedVisited) this.sharedVisited[nxt] = 1;
+            movesCount++;
+            claimCell(this.id, nxt);
+            return;
+          }
+          // reached target
+          this.reanchoring = false;
+          this.reanchorPath = null;
+          this.reanchorIndex = 0;
+          this.stack = [this.current];
+        }
+
+        if (this.stack.length === 0) {
+          if (!this._hasUnvisitedNeighbor(this.current)) {
+            this.reanchor();
+          } else {
+            this.stack = [this.current];
+          }
+          return;
+        }
+
+        const cur = this.stack[this.stack.length - 1];
+        this.current = cur;
+
+        const neighbors = this.maze.openNeighbors(cur);
+        const candidates = [];
+        for (let k = 0; k < neighbors.length; k++) {
+          const j = neighbors[k];
+          if (this.visited[j]) continue;
+          if (this.sharedVisited && this.sharedVisited[j]) continue;
+          candidates.push(j);
+        }
+
+        if (candidates.length > 0) {
+          const j = candidates[randInt(candidates.length)];
+          this.visited[j] = 1;
+          if (this.sharedVisited) this.sharedVisited[j] = 1;
+          this.stack.push(j);
+          this.current = j;
+          movesCount++;
+          claimCell(this.id, j);
+          return;
+        }
+
+        this.stack.pop();
+        if (this.stack.length === 0) {
+          if (!this._hasUnvisitedNeighbor(this.current)) {
+            this.reanchor();
+          } else {
+            this.stack = [this.current];
+          }
+          return;
+        }
+        this.current = this.stack[this.stack.length - 1];
+        movesCount++;
+      }
+    }
+
+    // =========================
     // CTE : arbre enraciné + compteurs
     // =========================
     // On construit un arbre enraciné à root (0,0). Comme le labyrinthe est un arbre, on obtient parent/children.
@@ -473,6 +1076,235 @@
       }
       parent[root] = -1;
       return { parent, children, order };
+    }
+
+    // Compute depth (distance to root) for all nodes with BFS
+    function computeDepths(maze, root) {
+      const n = maze.width * maze.height;
+      const depth = new Int32Array(n).fill(-1);
+      const q = new Int32Array(n);
+      let head = 0;
+      let tail = 0;
+      depth[root] = 0;
+      q[tail++] = root;
+
+      while (head < tail) {
+        const v = q[head++];
+        const neigh = maze.openNeighbors(v);
+        for (let k = 0; k < neigh.length; k++) {
+          const u = neigh[k];
+          if (depth[u] !== -1) continue;
+          depth[u] = depth[v] + 1;
+          q[tail++] = u;
+        }
+      }
+      return depth;
+    }
+
+    // Frontier helpers: a node is frontier if visited and has an unvisited neighbor
+    function isFrontierNode(i, maze, visited) {
+      if (!visited || !visited[i]) return false;
+      const neigh = maze.openNeighbors(i);
+      for (let k = 0; k < neigh.length; k++) {
+        if (!visited[neigh[k]]) return true;
+      }
+      return false;
+    }
+
+    function listFrontierNodes(maze, visited) {
+      if (!visited) return [];
+      const n = maze.width * maze.height;
+      const res = [];
+      for (let i = 0; i < n; i++) {
+        if (isFrontierNode(i, maze, visited)) res.push(i);
+      }
+      return res;
+    }
+
+    // Frontier using claimedBy (global explored by any agent)
+    function isFrontierNodeClaimed(i, maze, claimedBy) {
+      if (!claimedBy || claimedBy[i] === -1) return false;
+      const neigh = maze.openNeighbors(i);
+      for (let k = 0; k < neigh.length; k++) {
+        if (claimedBy[neigh[k]] === -1) return true;
+      }
+      return false;
+    }
+
+    // Shortest path between u and v in a tree using LCA + parent/depth
+    function shortestPathViaLca(u, v, parent, depth) {
+      const lca = lowestCommonAncestor(u, v, parent, depth);
+      if (lca === -1) return [u];
+      const path = [];
+      let x = u;
+      while (x !== lca) {
+        path.push(x);
+        x = parent[x];
+      }
+      path.push(lca);
+      const tail = [];
+      x = v;
+      while (x !== lca) {
+        tail.push(x);
+        x = parent[x];
+      }
+      for (let i = tail.length - 1; i >= 0; i--) path.push(tail[i]);
+      return path;
+    }
+
+    function distanceViaLca(u, v, parent, depth) {
+      const lca = lowestCommonAncestor(u, v, parent, depth);
+      if (lca === -1) return Infinity;
+      return depth[u] + depth[v] - 2 * depth[lca];
+    }
+
+    function updateAnchorCounts(prev, next, parent, depth, counts) {
+      if (!counts || prev === null || next === null || prev < 0 || next < 0) return;
+      const a = lowestCommonAncestor(prev, next, parent, depth);
+      if (a === -1) return;
+      let x = prev;
+      while (x !== a) {
+        counts[x] -= 1;
+        x = parent[x];
+      }
+      let y = next;
+      while (y !== a) {
+        counts[y] += 1;
+        y = parent[y];
+      }
+      // Keep LCA unchanged to preserve counts for common ancestors
+    }
+
+    function addAnchorCounts(node, parent, counts, delta = 1) {
+      let x = node;
+      while (x !== -1) {
+        counts[x] += delta;
+        x = parent[x];
+      }
+    }
+
+    // XuMinusXv(u,v) = sum x[i] along path u->LCA (excluding LCA)
+    //                - sum x[i] along path v->LCA (excluding LCA)
+    function XuMinusXv(u, v, parent, depth, counts) {
+      if (!counts) return Infinity;
+      const a = lowestCommonAncestor(u, v, parent, depth);
+      if (a === -1) return Infinity;
+      let sumU = 0;
+      let x = u;
+      while (x !== a) {
+        sumU += counts[x];
+        x = parent[x];
+      }
+      let sumV = 0;
+      let y = v;
+      while (y !== a) {
+        sumV += counts[y];
+        y = parent[y];
+      }
+      return sumU - sumV;
+    }
+
+    function XuLogXuMinusXvLogXv(u, v, parent, depth, counts) {
+      if (!counts) return Infinity;
+      const a = lowestCommonAncestor(u, v, parent, depth);
+      if (a === -1) return Infinity;
+      const xlogx = (x) => (x <= 0 ? 0 : x * Math.log(x));
+      let sumU = 0;
+      let x = u;
+      while (x !== a) {
+        sumU += xlogx(counts[x]);
+        x = parent[x];
+      }
+      let sumV = 0;
+      let y = v;
+      while (y !== a) {
+        sumV += xlogx(counts[y]);
+        y = parent[y];
+      }
+      return sumU - sumV;
+    }
+
+    // LGA reanchor policies
+    function lgaPolicyShallowestFrontier({ maze, depth, claimedBy }) {
+      let best = -1;
+      let bestDepth = Infinity;
+      for (let i = 0; i < claimedBy.length; i++) {
+        if (!isFrontierNodeClaimed(i, maze, claimedBy)) continue;
+        const d = depth[i];
+        if (d >= 0 && d < bestDepth) {
+          bestDepth = d;
+          best = i;
+        }
+      }
+      return best;
+    }
+
+    function lgaPolicyLambdaDepthDistance({ agent, maze, parent, depth, claimedBy, lambda }) {
+      const lam = Number.isFinite(lambda) ? lambda : 1;
+      let best = -1;
+      let bestScore = Infinity;
+      for (let i = 0; i < claimedBy.length; i++) {
+        if (!isFrontierNodeClaimed(i, maze, claimedBy)) continue;
+        const dRoot = depth[i];
+        if (dRoot < 0) continue;
+        const dist = distanceViaLca(agent.current, i, parent, depth);
+        const score = lam * dRoot + dist;
+        if (score < bestScore) {
+          bestScore = score;
+          best = i;
+        }
+      }
+      return best;
+    }
+
+    function lgaPolicyXuMinusXv({ agent, maze, parent, depth, claimedBy, counts }) {
+      let best = -1;
+      let bestScore = -Infinity;
+      for (let i = 0; i < claimedBy.length; i++) {
+        if (!isFrontierNodeClaimed(i, maze, claimedBy)) continue;
+        const dist = distanceViaLca(agent.current, i, parent, depth);
+        const score = XuMinusXv(agent.current, i, parent, depth, counts) - depth[i] - dist;
+        if (score > bestScore) {
+          bestScore = score;
+          best = i;
+        }
+      }
+      return best;
+    }
+
+    function lgaPolicyXuLogXuMinusXvLogXv({ agent, maze, parent, depth, claimedBy, counts }) {
+      let best = -1;
+      let bestScore = -Infinity;
+      for (let i = 0; i < claimedBy.length; i++) {
+        if (!isFrontierNodeClaimed(i, maze, claimedBy)) continue;
+        const dist = distanceViaLca(agent.current, i, parent, depth);
+        const score = XuLogXuMinusXvLogXv(agent.current, i, parent, depth, counts) - depth[i] - dist;
+        if (score > bestScore) {
+          bestScore = score;
+          best = i;
+        }
+      }
+      return best;
+    }
+
+    // Lowest Common Ancestor using parent + depth (O(depth(u)+depth(v)))
+    function lowestCommonAncestor(u, v, parent, depth) {
+      if (!parent || !depth) return -1;
+      if (u < 0 || v < 0) return -1;
+      if (depth[u] < 0 || depth[v] < 0) return -1;
+
+      let a = u;
+      let b = v;
+
+      while (depth[a] > depth[b]) a = parent[a];
+      while (depth[b] > depth[a]) b = parent[b];
+
+      while (a !== b) {
+        a = parent[a];
+        b = parent[b];
+        if (a === -1 || b === -1) return -1;
+      }
+      return a;
     }
 
     // Etat partagé CTE
@@ -652,8 +1484,13 @@
           } else {
             this.stack.pop();
             if (this.stack.length > 0) {
+              // Backtrack one step
+              this.current = this.stack[this.stack.length - 1];
               movesCount++;
+            } else {
+              this.done = true;
             }
+            return;
           }
         }
       }
@@ -779,6 +1616,80 @@
 
       const ox = pad, oy = pad;
 
+      // optional: show frontier nodes
+      try {
+        const showFrontier = document.getElementById('chkShowFrontier')?.checked;
+        if (showFrontier) {
+          if (claimedBy) {
+            ctx.fillStyle = 'rgba(0, 90, 0, 0.45)';
+            for (let idx = 0; idx < claimedBy.length; idx++) {
+              if (!isFrontierNodeClaimed(idx, maze, claimedBy)) continue;
+              const x = idx % w;
+              const y = (idx / w) | 0;
+              ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+            }
+          }
+        }
+      } catch (e) {
+        // defensive: ignore if checkbox missing
+      }
+
+      // optional: show anchor counts x[i]
+      try {
+        const showX = document.getElementById('chkShowAnchorCounts')?.checked;
+        if (showX && lgaAnchorCounts) {
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.font = `${Math.max(8, Math.floor(cell * 0.35))}px system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          for (let i = 0; i < lgaAnchorCounts.length; i++) {
+            const val = lgaAnchorCounts[i];
+            if (val === 0) continue;
+            const x = i % w;
+            const y = (i / w) | 0;
+            const cx = ox + x * cell + cell * 0.5;
+            const cy = oy + y * cell + cell * 0.5;
+            ctx.fillText(String(val), cx, cy);
+          }
+        }
+      } catch (e) {
+        // defensive: ignore if checkbox missing
+      }
+
+      // optional: highlight nodes at a given depth
+      try {
+        const highlightDepth = document.getElementById('chkHighlightDepth')?.checked;
+        const depthInput = document.getElementById('depthLevel');
+        const depthTarget = depthInput ? Number(depthInput.value) : NaN;
+        if (highlightDepth && depthFromRoot && Number.isFinite(depthTarget)) {
+          ctx.fillStyle = 'rgba(255, 200, 0, 0.35)';
+          for (let i = 0; i < depthFromRoot.length; i++) {
+            if (depthFromRoot[i] !== depthTarget) continue;
+            const x = i % w;
+            const y = (i / w) | 0;
+            ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+          }
+        }
+      } catch (e) {
+        // defensive: if checkbox/input not present or depth missing, ignore
+      }
+
+      // optional: shade nodes not yet visited (all algos)
+      try {
+        const shadeUnvisited = document.getElementById('chkShadeUnvisited')?.checked;
+        if (shadeUnvisited && claimedBy) {
+          ctx.fillStyle = 'rgba(0,0,0,0.6)';
+          for (let i = 0; i < claimedBy.length; i++) {
+            if (claimedBy[i] !== -1) continue;
+            const x = i % w;
+            const y = (i / w) | 0;
+            ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+          }
+        }
+      } catch (e) {
+        // defensive: if checkbox not present or claimedBy missing, ignore
+      }
+
       // optional: shade nodes whose subtree is fully done (CTE)
       try {
         const shade = document.getElementById('chkShadeDoneSubtrees')?.checked;
@@ -854,6 +1765,25 @@
         ctx.stroke();
       }
 
+      // debug LCA markers
+      try {
+        const showLca = document.getElementById('chkShowLca')?.checked;
+        if (showLca && debugLcaU !== null && debugLcaV !== null) {
+          const markCell = (i, color) => {
+            if (i === null || i < 0) return;
+            const x = i % w;
+            const y = (i / w) | 0;
+            ctx.fillStyle = color;
+            ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+          };
+          markCell(debugLcaU, 'rgba(160, 30, 30, 0.5)');
+          markCell(debugLcaV, 'rgba(160, 30, 30, 0.5)');
+          markCell(debugLca, 'rgba(30, 80, 200, 0.5)');
+        }
+      } catch (e) {
+        // defensive: ignore if inputs missing
+      }
+
       // agents
       for (const a of agents) {
         const i = a.current;
@@ -901,6 +1831,9 @@
     const agentCountInput = document.getElementById("agentCount");
     const agentsPanel = document.getElementById("agentsPanel");
     const canvas = document.getElementById("canvas");
+    const lcaUInput = document.getElementById("lcaU");
+    const lcaVInput = document.getElementById("lcaV");
+    const lgaLambdaInput = document.getElementById("lgaLambda");
 
     let maze = null;
     let agents = [];
@@ -918,10 +1851,55 @@
     // CTE-only shared + rooted tree
     let cteTree = null;     // { parent, children, order }
     let cteShared = null;   // CteShared
+    let depthFromRoot = null; // Int32Array or null
+    let lgaSharedVisited = null; // Uint8Array or null
+    let lgaAnchorCounts = null; // Int32Array or null
+    let debugLcaU = null;
+    let debugLcaV = null;
+    let debugLca = null;
 
     // Expose for debugging in console
-    const debugVars = { get maze() { return maze; }, get agents() { return agents; }, get cteTree() { return cteTree; }, get cteShared() { return cteShared; } };
+    const debugVars = {
+      get maze() { return maze; },
+      get agents() { return agents; },
+      get cteTree() { return cteTree; },
+      get cteShared() { return cteShared; },
+      get depthFromRoot() { return depthFromRoot; },
+      lca(u, v) {
+        if (!maze) return -1;
+        if (!cteTree) {
+          const root = maze.idx(0, 0);
+          cteTree = buildRootedTree(maze, root);
+        }
+        if (!depthFromRoot) {
+          const root = maze.idx(0, 0);
+          depthFromRoot = computeDepths(maze, root);
+        }
+        return lowestCommonAncestor(u, v, cteTree.parent, depthFromRoot);
+      }
+    };
     window._debug = debugVars;
+
+    function updateLcaDebug() {
+      if (!maze || !lcaUInput || !lcaVInput) {
+        debugLcaU = null;
+        debugLcaV = null;
+        debugLca = null;
+        return;
+      }
+      const n = maze.width * maze.height;
+      const u = Number(lcaUInput.value);
+      const v = Number(lcaVInput.value);
+      if (!Number.isFinite(u) || !Number.isFinite(v) || u < 0 || v < 0 || u >= n || v >= n) {
+        debugLcaU = null;
+        debugLcaV = null;
+        debugLca = null;
+        return;
+      }
+      debugLcaU = u | 0;
+      debugLcaV = v | 0;
+      debugLca = debugVars.lca(debugLcaU, debugLcaV);
+    }
 
     // Find the deepest node and return the longest path from root to that node
     function findLongestPath(mazeObj, root) {
@@ -1072,6 +2050,7 @@
         // construire arbre enraciné + shared
         cteTree = buildRootedTree(maze, start);
         cteShared = new CteShared(nCells);
+        lgaSharedVisited = null;
 
         for (let i = 0; i < count; i++) {
           const color = PALETTE[i % PALETTE.length];
@@ -1083,6 +2062,7 @@
         // OPT: deterministic DFS path divided into chunks
         cteTree = null;
         cteShared = null;
+        lgaSharedVisited = null;
 
         const path = buildDfsPath(maze, start);
         const pathLen = path.length;
@@ -1096,10 +2076,70 @@
           const a = new OptAgent(i, color, maze, start, path, chunkStart, chunkEnd, speed);
           agents.push(a);
         }
+      } else if (algo === "lga") {
+        cteTree = null;
+        cteShared = null;
+        lgaSharedVisited = new Uint8Array(nCells);
+        lgaSharedVisited[start] = 1;
+        lgaAnchorCounts = null;
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new LgaAgent(i, color, maze, start, lgaSharedVisited, lgaPolicyShallowestFrontier, speed, false);
+          claimCell(a.id, start);
+          agents.push(a);
+        }
+      } else if (algo === "lga2") {
+        cteTree = null;
+        cteShared = null;
+        lgaSharedVisited = new Uint8Array(nCells);
+        lgaSharedVisited[start] = 1;
+        lgaAnchorCounts = null;
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new LgaAgent(i, color, maze, start, lgaSharedVisited, lgaPolicyLambdaDepthDistance, speed, false);
+          claimCell(a.id, start);
+          agents.push(a);
+        }
+      } else if (algo === "lga3") {
+        cteTree = buildRootedTree(maze, start);
+        depthFromRoot = computeDepths(maze, start);
+        cteShared = null;
+        lgaSharedVisited = new Uint8Array(nCells);
+        lgaSharedVisited[start] = 1;
+        lgaAnchorCounts = new Int32Array(nCells);
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new LgaAgent(i, color, maze, start, lgaSharedVisited, lgaPolicyXuMinusXv, speed, true);
+          claimCell(a.id, start);
+          agents.push(a);
+        }
+      } else if (algo === "lga4") {
+        cteTree = buildRootedTree(maze, start);
+        depthFromRoot = computeDepths(maze, start);
+        cteShared = null;
+        lgaSharedVisited = new Uint8Array(nCells);
+        lgaSharedVisited[start] = 1;
+        lgaAnchorCounts = new Int32Array(nCells);
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new LgaAgent(i, color, maze, start, lgaSharedVisited, lgaPolicyXuLogXuMinusXvLogXv, speed, true);
+          claimCell(a.id, start);
+          agents.push(a);
+        }
       } else {
         // random dfs (local)
         cteTree = null;
         cteShared = null;
+        lgaSharedVisited = null;
+        lgaAnchorCounts = null;
 
         for (let i = 0; i < count; i++) {
           const color = PALETTE[i % PALETTE.length];
@@ -1138,7 +2178,19 @@
       const gen = document.getElementById('generator')?.value || 'wilson';
       if (gen === 'dfs') maze = GridMaze.generateDfs(n, n);
       else if (gen === 'comb') maze = GridMaze.generateComb(n, n);
+      else if (gen === 'kruskal') maze = GridMaze.generateKruskal(n, n);
+      else if (gen === 'sidewinder') maze = GridMaze.generateSidewinder(n, n);
+      else if (gen === 'eller') maze = GridMaze.generateEller(n, n);
+      else if (gen === 'prim') maze = GridMaze.generatePrim(n, n);
+      else if (gen === 'binary_tree') maze = GridMaze.generateBinaryTree(n, n);
+      else if (gen === 'hunt_and_kill') maze = GridMaze.generateHuntAndKill(n, n);
+      else if (gen === 'spine_branches') maze = GridMaze.generateSpineBranches(n, n);
       else maze = GridMaze.generateWilson(n, n);
+
+      // recompute depth table for debug highlighting
+      const root = maze.idx(0, 0);
+      depthFromRoot = computeDepths(maze, root);
+      updateLcaDebug();
 
       const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
@@ -1172,6 +2224,44 @@
       }
       draw(canvas, maze, claimedBy, agents);
     });
+
+    document.getElementById("chkHighlightDepth").addEventListener("change", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
+    document.getElementById("depthLevel").addEventListener("input", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
+    document.getElementById("chkShowFrontier").addEventListener("change", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
+    document.getElementById("chkShowAnchorCounts").addEventListener("change", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
+    if (lgaLambdaInput) {
+      lgaLambdaInput.addEventListener("input", () => {
+        // only affects LGA2 policy on next reanchor
+      });
+    }
+
+    document.getElementById("chkShowLca").addEventListener("change", () => {
+      if (!maze) return;
+      updateLcaDebug();
+      draw(canvas, maze, claimedBy, agents);
+    });
+    if (lcaUInput) {
+      lcaUInput.addEventListener("input", () => {
+        if (!maze) return;
+        updateLcaDebug();
+        draw(canvas, maze, claimedBy, agents);
+      });
+    }
+    if (lcaVInput) {
+      lcaVInput.addEventListener("input", () => {
+        if (!maze) return;
+        updateLcaDebug();
+        draw(canvas, maze, claimedBy, agents);
+      });
+    }
 
     window.addEventListener("resize", () => {
       if (maze) draw(canvas, maze, claimedBy, agents);
