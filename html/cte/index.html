@@ -82,7 +82,7 @@
 
         <label>
           Agents (k)
-          <input id="agentCount" type="number" min="1" max="30" value="3" />
+          <input id="agentCount" type="number" min="1" max="50" value="3" />
         </label>
 
         <label>
@@ -138,7 +138,7 @@
       <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
       -->
       <br/><br/>
-       - Suggested parameters: Try with large number of robots (up to 30), high speeds, and large N (up to 300) to see nice patterns emerge. 
+       - Suggested parameters: Try with large number of robots (up to 50), high speeds, and large N (up to 300) to see nice patterns emerge. 
       </div>
 
       <div id="timerPanel" class="panel">
@@ -203,6 +203,16 @@
           <input type="checkbox" id="chkShowAnchorCounts" />
           Show x (anchor counts)
         </label>
+        <label style="display:block; margin-top:8px;">
+          <input type="checkbox" id="chkShowTrails" />
+          Show trails to root
+        </label>
+        <div class="small" style="margin-top:10px;">Performance</div>
+        <div class="row" style="align-items:center; gap:8px; justify-content:space-between;">
+          <span id="fpsVal" class="pill">0 fps</span>
+          <span id="frameMsVal" class="pill">0.0 ms/frame</span>
+          <span id="lagRateVal" class="pill">0 % lag</span>
+        </div>
       </div>
     </div>
   </div>
@@ -1707,6 +1717,37 @@
         // defensive: if checkbox not present or cteShared missing, ignore
       }
 
+      // optional: shade all nodes on agent->root trails
+      // fixed opacity for overlapping trails only:
+      // - if k1 >= 2, draw with alpha=0.6
+      // - else, do not shade the cell
+      try {
+        const showTrails = document.getElementById('chkShowTrails')?.checked;
+        if (showTrails && agents.length > 0) {
+          const parent = getRootParentForDebugTrails();
+          if (parent) {
+            const counts = new Uint16Array(w * h);
+            for (let ai = 0; ai < agents.length; ai++) {
+              let v = agents[ai].current;
+              while (v >= 0) {
+                counts[v]++;
+                v = parent[v];
+              }
+            }
+            for (let i = 0; i < counts.length; i++) {
+              const k1 = counts[i];
+              if (k1 < 2) continue;
+              const x = i % w;
+              const y = (i / w) | 0;
+              ctx.fillStyle = 'rgba(255,0,0,1)';
+              ctx.fillRect(ox + x * cell, oy + y * cell, cell, cell);
+            }
+          }
+        }
+      } catch (e) {
+        // defensive: ignore if checkbox missing or trail parent cannot be built
+      }
+
       // claims
       for (let i = 0; i < claimedBy.length; i++) {
         const aId = claimedBy[i];
@@ -1834,12 +1875,20 @@
     const lcaUInput = document.getElementById("lcaU");
     const lcaVInput = document.getElementById("lcaV");
     const lgaLambdaInput = document.getElementById("lgaLambda");
+    const fpsValEl = document.getElementById("fpsVal");
+    const frameMsValEl = document.getElementById("frameMsVal");
+    const lagRateValEl = document.getElementById("lagRateVal");
 
     let maze = null;
     let agents = [];
     let lastT = performance.now();
     // throttle UI text updates (ms)
     let lastUiUpdate = 0;
+    let fpsEma = 0; // exponential moving average of fps
+    const lagWindow = [];
+    let lagWindowCount = 0;
+    const lagWindowSize = 120; // rolling number of frames
+    const lagDtThreshold = 1 / 30; // consider frame "laggy" if slower than 30 fps
     let debugPath = null; // path to render in red for debugging
     let movesCount = 0; // shared counter for agent moves
 
@@ -1852,11 +1901,21 @@
     let cteTree = null;     // { parent, children, order }
     let cteShared = null;   // CteShared
     let depthFromRoot = null; // Int32Array or null
+    let debugRootParent = null; // Int32Array or null (rooted at (0,0), for debug trails)
     let lgaSharedVisited = null; // Uint8Array or null
     let lgaAnchorCounts = null; // Int32Array or null
     let debugLcaU = null;
     let debugLcaV = null;
     let debugLca = null;
+
+    function getRootParentForDebugTrails() {
+      if (!maze) return null;
+      if (cteTree && cteTree.parent) return cteTree.parent;
+      if (debugRootParent) return debugRootParent;
+      const root = maze.idx(0, 0);
+      debugRootParent = buildRootedTree(maze, root).parent;
+      return debugRootParent;
+    }
 
     // Expose for debugging in console
     const debugVars = {
@@ -2155,6 +2214,9 @@
       draw(canvas, maze, claimedBy, agents);
 
       lastT = performance.now();
+      fpsEma = 0;
+      lagWindow.length = 0;
+      lagWindowCount = 0;
       agents.forEach(a => a.budget = 0);
       movesCount = 0;  // reset moves counter
 
@@ -2166,7 +2228,7 @@
 
     function restartExploration() {
       if (!maze) return;
-      const count = agents.length || Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
+      const count = agents.length || Math.max(1, Math.min(50, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
     }
 
@@ -2186,13 +2248,14 @@
       else if (gen === 'hunt_and_kill') maze = GridMaze.generateHuntAndKill(n, n);
       else if (gen === 'spine_branches') maze = GridMaze.generateSpineBranches(n, n);
       else maze = GridMaze.generateWilson(n, n);
+      debugRootParent = null;
 
       // recompute depth table for debug highlighting
       const root = maze.idx(0, 0);
       depthFromRoot = computeDepths(maze, root);
       updateLcaDebug();
 
-      const count = Math.max(1, Math.min(30, Number(agentCountInput.value) || 1));
+      const count = Math.max(1, Math.min(50, Number(agentCountInput.value) || 1));
       createAgents(count, algoSelect.value);
     }
 
@@ -2237,6 +2300,9 @@
     document.getElementById("chkShowAnchorCounts").addEventListener("change", () => {
       if (maze) draw(canvas, maze, claimedBy, agents);
     });
+    document.getElementById("chkShowTrails").addEventListener("change", () => {
+      if (maze) draw(canvas, maze, claimedBy, agents);
+    });
     if (lgaLambdaInput) {
       lgaLambdaInput.addEventListener("input", () => {
         // only affects LGA2 policy on next reanchor
@@ -2279,6 +2345,14 @@
     function tick(t) {
       const dt = Math.max(0, (t - lastT) / 1000);
       lastT = t;
+      const instFps = dt > 0 ? 1 / dt : 0;
+      fpsEma = fpsEma > 0 ? (0.9 * fpsEma + 0.1 * instFps) : instFps;
+      const laggy = dt > lagDtThreshold ? 1 : 0;
+      lagWindow.push(laggy);
+      lagWindowCount += laggy;
+      if (lagWindow.length > lagWindowSize) {
+        lagWindowCount -= lagWindow.shift();
+      }
 
       // update timer (dt is in seconds)
       if (timerRunning) {
@@ -2301,6 +2375,13 @@
         // update moves counter
         const movesEl = document.getElementById("movesVal");
         if (movesEl) movesEl.textContent = `${movesCount} moves`;
+
+        if (fpsValEl) fpsValEl.textContent = `${Math.round(fpsEma)} fps`;
+        if (frameMsValEl) frameMsValEl.textContent = `${(dt * 1000).toFixed(1)} ms/frame`;
+        if (lagRateValEl) {
+          const lagRate = lagWindow.length > 0 ? Math.round((lagWindowCount / lagWindow.length) * 100) : 0;
+          lagRateValEl.textContent = `${lagRate} % lag`;
+        }
       }
 
       if (maze && agents.length > 0 && !allDone()) {
