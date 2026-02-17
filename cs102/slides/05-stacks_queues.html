@@ -623,7 +623,7 @@ __front__ - index of the first element (size > 0)
 
 __back__ - index at which the next element should be added
 
-__size = back - front__
+__back = front + size__
 
 
 ---
@@ -685,13 +685,11 @@ of the array instead of allocating a new one.
 
 ----
 
-<del>__size = back - front__</del>
+<del>__back = front + size__</del>
 
 
-__size = <br>
-&nbsp;&nbsp;&nbsp;(back - front) mod capacity__
+__back = (front+size) mod capacity__
 
-(when size < capacity)
 ---
 ### Aside: modulo arithmetic examples
 
@@ -721,231 +719,11 @@ the remainder. The two are the same when both operands are positive.
 In java: `-6 % 8` evaluates to -6, to obtain true modulus, we need to add the divisor
 to the result: `(-6 % 8) + 8`.
 
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-42.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 7
-
-front = 2
-
-back = 1
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-43.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-44.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
 --
 
-----
+- __back = (front + size) % capacity__ is __always correct__ because all values here are non-negative.
 
-size == capacity
-
-so we need a larger array
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-45.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
-
-----
-
-size == capacity
-
-so we need a larger array
-
-- create a new larger array
-- copy of the values from the old array to the new one
-- place the new value at the end
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-46.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
-
-----
-
-size == capacity
-
-so we need a larger array
-
-- create a new larger array
-- copy of the values from the old array to the new one
-- place the new value at the end
-
---
-
-__Will this work?__
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-47.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
-
-----
-
-size == capacity
-
-so we need a larger array
-
-- create a new larger array
-- copy of the values from the old array to the new one
-- place the new value at the end
-
-
-
-__Will this work?__
-
-.red[__NO__]
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-44.jpg" width=500px />
-]
-
-capacity = 8
-
-size = 8
-
-front = 2
-
-back = 2
-
-
-----
-
-size == capacity
-
-so we need a larger array
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="queue using an array" src="img/06/queue-array-48.jpg" width=500px />
-]
-
-capacity = 8<br>
-size = 8<br>
-front = 2<br>
-back = 2
-
-----
-
-size == capacity
-
-so we need a larger array
-
-- create a new larger array
-- copy of the values from the old array to the new one<br>
-  for each index `i` in the old array, copy it to index <br>
-  `(i - front) mod capacity` <br>in the new array
-- place the new value at the end
-
---
-
-__Will this work?__
-
-
----
-template: queue-array
-
-.left-column2-large[
-  <img alt="stack using an array" src="img/06/queue-array-49.jpg" width=500px />
-]
-
-capacity = 8<br>
-size = 8<br>
-front = 2<br>
-back = 2
-
-----
-
-size == capacity
-
-so we need a larger array
-
-- create a new larger array
-- copy of the values from the old array to the new one<br>
-  for each index `i` in the old array, copy it to index <br>
-  `(i - front) mod capacity` <br>in the new array
-- place the new value at the end
-
-
-__Will this work?__
-.red[__YES__]
+- In the implementation provided, we only keep track of `f` (front) and `sz` (size), so we can compute `back` as `(f + sz) % data.length` when needed.
 
 ---
 ## Queue Implementation Using an Array
@@ -979,6 +757,246 @@ public class ArrayQueue<E> implements Queue<E> {
     return answer;
   }
 ```
+
+
+---
+## Resizeable Queue
+
+In the above implementation, the queue has a fixed capacity, that is determined at the time of creation of the queue. 
+
+Much like for the `ArrayList`, we can make sure that the array grows when the number of elements in the queue reaches the capacity of the array.
+
+--
+name: queue-array2
+
+template: queue-array2
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-42.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 7
+
+front = 2
+
+back = 1
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-43.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-44.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+--
+
+----
+
+size == capacity
+
+so we need a larger array
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-45.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+
+----
+
+size == capacity
+
+so we need a larger array
+
+- create a new larger array
+- copy of the values from the old array to the new one
+- place the new value at the end
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-46.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+
+----
+
+size == capacity
+
+so we need a larger array
+
+- create a new larger array
+- copy of the values from the old array to the new one
+- place the new value at the end
+
+--
+
+__Will this work?__
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-47.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+
+----
+
+size == capacity
+
+so we need a larger array
+
+- create a new larger array
+- copy of the values from the old array to the new one
+- place the new value at the end
+
+
+
+__Will this work?__
+
+.red[__NO__]
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-44.jpg" width=500px />
+]
+
+capacity = 8
+
+size = 8
+
+front = 2
+
+back = 2
+
+
+----
+
+size == capacity
+
+so we need a larger array
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="queue using an array" src="img/06/queue-array-48.jpg" width=500px />
+]
+
+capacity = 8<br>
+size = 8<br>
+front = 2<br>
+back = 2
+
+----
+
+size == capacity
+
+so we need a larger array
+
+- create a new larger array
+- copy of the values from the old array to the new one<br>
+  for each index `i` in the old array, copy it to index <br>
+  `(i - front) mod capacity` <br>in the new array
+- place the new value at the end
+
+--
+
+__Will this work?__
+
+
+---
+template: queue-array2
+
+.left-column2-large[
+  <img alt="stack using an array" src="img/06/queue-array-49.jpg" width=500px />
+]
+
+capacity = 8<br>
+size = 8<br>
+front = 2<br>
+back = 2
+
+----
+
+size == capacity
+
+so we need a larger array
+
+- create a new larger array
+- copy of the values from the old array to the new one<br>
+  for each index `i` in the old array, copy it to index <br>
+  `(i - front) mod capacity` <br>in the new array
+- place the new value at the end
+
+
+__Will this work?__
+.red[__YES__]
+
+
 
 ---
 ## Queue Implementation Using a Linked Structure
@@ -1101,6 +1119,50 @@ public class LinkedQueue<E> implements Queue<E> {
 template:section
 
 # Examples and Things to Think About
+
+---
+
+## Queue with Two Stacks
+
+- Another completely different way to implement a queue is to use two stacks. 
+
+- Try to think about how you would do it.
+
+---
+
+## Queue with Two Stacks (Solution)
+```java
+public class TwoStackQueue<E> implements Queue<E> {
+  private final ArrayStack<E> inStack = new ArrayStack<>();
+  private final ArrayStack<E> outStack = new ArrayStack<>();
+  
+    public TwoStackQueue() { }
+
+  public int size() { return inStack.size() + outStack.size(); }
+
+  public boolean isEmpty() { return size() == 0; }
+
+  public void enqueue(E e) {
+    inStack.push(e);
+  }
+
+  public E dequeue() {
+    if (isEmpty()) return null;
+    moveInToOutIfNeeded();
+    return outStack.pop();
+  }
+
+  private void moveInToOutIfNeeded() {
+    if (outStack.isEmpty()) {
+      while (!inStack.isEmpty()) {
+        outStack.push(inStack.pop());
+      }
+    }
+  }
+
+
+
+```
 
 
 ---
