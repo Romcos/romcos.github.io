@@ -395,6 +395,64 @@ public class LinkedStack<E> implements Stack<E> {
   }
 }
 ```
+---
+## Application: Reverse a singly linked list
+
+- Given a singly linked list, print all of its elements in reverse order.
+
+ - Recursive implementation (without a stack)
+
+ - Imperative implementation (with a stack)
+
+--
+
+- Two possible implementations:
+
+  - __iterative__: use a stack to store the elements of the list as you traverse it, then pop the elements from the stack and print them
+
+  - __recursive__: recursively print the rest of the list, then print the first element
+
+--
+- Trace the execution of both implementations on the list [1, 2, 3].
+
+--
+
+- The recursive implementation is more elegant, but the iterative implementation may be more efficient (in terms of space) for long lists.
+
+- The recursive implementation may lead to stack overflow for long lists.
+
+- Implicitly, the recursive implementaiton uses the call stack of the JVM, while the iterative implementation uses an explicit stack data structure.
+
+---
+## Application: Reverse a singly linked list
+- Code here is assumed to be within the LinkedList<E> class
+
+```java
+public void printReverse() { 
+    printReverseRec(head);
+}
+
+private void printReverseRec(Node node) { // recursive helper method
+    if (node == null) return;
+    printReverseRec(node.next);
+    System.out.print(node.data + " ");
+}
+```
+
+```java
+public void printReverse2() { // Imperative
+    Stack<E> stack = new ArrayStack<E>();
+    for (Node cur = head; cur != null; cur = cur.next) {
+        stack.push(cur);
+    }
+    while (!stack.isEmpty()) {
+        System.out.print(stack.pop().data + " ");
+    }
+}
+```
+
+- Any recursive method can be implemented iteratively using a stack!!
+
 
 ---
 template: section
