@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Graphs - Intro</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## Graphs - Introduction
+
+.author[
+Instructor: Joanna Klukowska <br><br><br>
+]
+
+.license[
+Copyright 2020 Joanna Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+
+---
+
+template: section
+
+# Graphs 
+## Terminology and Definitions 
+
+
+
+
+
+---
+## Graphs: terminology and definitions
+
+.right-column2[.center[
+<img width="400px" alt="undirected graph" src="img/15/graphs-1.png">
+]]
+
+- Graphs consist of 
+    - _nodes_ / _vertices_, <br/>the nodes on the right are: A, B, C, D, E, F, G, H, J
+    - _edges_ , <br/> these are the connections between the nodes; there are eleven edges on the right: A-B, A-F, A-H, B-C, B-E, C-D, C-J, D-G, D-F, E-D, F-H (they are listed in no particular order) 
+
+
+--
+- A _path in a graph_ is a sequence of edges that leads from one node to another. In the graph on the right there are several paths from A to G. One of them is A-B-E-D-G. 
+- The _length of a path_ is the number of edges in it. The path mentioned above has length 4. <br/>
+- A _cycle_ is a path in which the first and last nodes are the same. For example, A-B-E-D-F-A is a cycle. 
+
+--
+
+
+
+- Two nodes are _adjacent_ (or are _neighbors_) if there is an edge between them. 
+
+
+
+---
+## Graphs: terminology and definitions
+
+.right-column2[.center[
+<img width="350px" alt="undirected connected graph" src="img/15/graphs-1.png">
+
+<img width="350px" alt="undirected disconnected graph" src="img/15/graphs-5.png">
+]]
+
+- A graph is _connected_ if there exists a path between every pair of nodes, like the graph on the upper right. 
+
+--
+- A graph is _disconnected_ if it is NOT connected, like the graph on the lower right. 
+- The parts of a disconnected graph are called its _connected components_. 
+
+--
+- A _tree_ is a connected graph with no cycles, like the graph below. 
+<img width="350px" alt="undirected connected graph" src="img/15/graphs-6.png">
+
+
+---
+## Graphs: terminology and definitions
+
+.right-column2[.center[
+<img width="350px" alt="directed graph" src="img/15/graphs-2.png">
+]]
+
+- A _directed graph_ contains edges that can be traversed in one direction only.
+
+--
+    - there is an edge from H to A, but there is no edge from A to H
+    
+--
+- the path from B to D is B->E->D, but <br/> the path from D to B is D->J->C->B
+
+--
+
+- If an edge exists in both directions, it is marked by two directed edges, like B->C and C->B, (or by an arrow that points in both directions, like B<->C)     
+    
+
+---
+## Graphs: terminology and definitions
+
+.right-column2[.center[
+<img width="350px" alt="directed graph" src="img/15/graphs-3.png">
+
+
+<img width="350px" alt="directed graph" src="img/15/graphs-4.png">
+]]
+
+- A _weighted graph_ contains edges that have _weights_ assigned to them. 
+
+- The graph on the upper right is an _undirected weighted graph_.
+
+- The graph on the lower right is a _directed weighted graph_. 
+
+
+
+
+---
+
+template: section
+
+# Graph Representations  
+
+
+
+
+
+
+---
+name:adj-list
+
+## Adjacency List
+
+
+.right-column2[
+```
+    class Node {
+        label/data 
+        list of nodes adjacent to it
+    }
+```
+]
+
+- Each node is assigned an _adjacency list_ of nodes that are adjacent to it. 
+
+- The adjacency list can be stored as a linked list or an array.
+
+- The graph itself is represented as a list of nodes. 
+
+---
+template:adj-list
+
+.below-column2[]
+
+.right-column2[.center[
+<img width="400px" alt="undirected graph" src="img/15/graphs-1.png">
+]]
+
+An adjacency list representation for the graph on the right could be 
+a list as follows:
+
+```
+    A, [B, F, H]
+    B, [A, C, E]
+    C, [D, J]
+    D, [C, E, F, G]
+    E, [B, D]
+    F, [A, D, H]
+    G, [D]
+    H, [A, F]
+    J, [C]
+```
+
+(each row represents a single node). 
+
+--
+
+Note that in an undirected graph, if a node is listed in the adjacency list of another node, then 
+the symmetric case has to be true as well (since the adjacency relation is symmetric. For example, if E is adjacent to D, then D is adjacent to E. 
+
+---
+template:adj-list
+
+.below-column2[]
+
+.right-column2[.center[
+<img width="400px" alt="directed graph" src="img/15/graphs-2.png">
+]]
+
+In a directed graph, there is no symmetry. 
+
+An adjacency list representation for the graph on the right could be 
+a list as follows:
+
+```
+    A, [B]
+    B, [A, C, E]
+    C, [B, D]
+    D, [J]
+    E, [D, F]
+    F, [E]
+    G, [D]
+    H, [A, F]
+    J, [C]
+```
+
+(each row represents a single node). 
+
+
+
+---
+name:adjacency_matrix 
+
+## Adjacency Matrix
+
+- _Adjacency matrix_ is a matrix indicating the edges of the graph.
+
+- It is typically stored as a 2D array in which `matrix[a][b]` indicates
+if there is an edge between nodes `a` and `b`
+  - for undirected graphs, `matrix[a][b]=matrix[b][a]`
+  - for unweighted graphs, the matrix can store binary information
+  - for weighted graphs, the matrix values indicate the weights of the edge
+- drawback: uses $n^2$ elements and most of them may be zero (indicating no edges)
+
+---
+template:adjacency_matrix
+
+
+.right-column2[.center[
+<img width="400px" alt="directed graph" src="img/15/graphs-1.png">
+]]
+
+.left-column2[ 
+Example for an undirected, unweighted graph
+
+|       | A | B | C | D | E | F | G | H | J | 
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **A** | 0 | **1** | 0 | 0 | 0 | **1** | 0 | **1** | 0 |
+| **B** | **1** | 0 | **1** | 1 | **1** | 0 | 0 | 0 | 0 |
+| **C** | 0 | **1** | 0 | **1** | 0 | 0 | 0 | 0 | **1** |
+| **D** | 0 | **1** | 1 | 0 | **1** | 1 | **1** | 0 | 0 |
+| **E** | 0 | **1** | 0 | **1** | 0 | 0 | 0 | 0 | 0 |
+| **F** | **1** | 0 | 0 | **1** | 0 | 0 | 0 | **1** | 0 |
+| **G** | 0 | 0 | 0 | **1** | 0 | 0 | 0 | 0 | 0 |
+| **H** | **1** | 0 | 0 | 0 | 0 | **1** | 0 | 0 | 0 |
+| **J** | 0 | 0 | **1** | 0 | 0 | 0 | 0 | 0 | 0 |
+
+]
+---
+name:edge_list
+## Edge List
+
+- An _edge list_ is a list that contains all edges in the graph in some order.
+
+- It is convenient for use in algorithms that need to traverse all the edges and it is not
+necessary to find edges that start/end in a particular node.
+
+- Elements in an _edge list_ are pairs of nodes indicating the end-points for each edge.
+
+---
+template:edge_list
+
+
+.right-column2[.center[
+<img width="400px" alt="directed graph" src="img/15/graphs-2.png">
+]]
+
+.left-column2[ 
+Example for a directed, unweighted graph. 
+
+```
+    A->B
+    B->A
+    B->C
+    B->E
+    C->B
+    C->D
+    D->J
+    E->D
+    E->F
+    F->E
+    G->D
+    H->A
+    H->F
+    J->C
+```
+
+]
+
+---
+## Implicit Graph
+
+- _Implicit graphs_ are graphs that are not stored using graphs data structures (like the ones in the previous slides).
+
+- They are used when the edge connectivity can be determined easily and/or if they can be determined using some rules. For example, 
+
+--
+
+  - A graph contains N nodes labeled 0..N. There is an edge between 
+  two nodes if a sum of their labels is even. 
+    <br/>For example: nodes with labels 3 and 57 have an edge between them, but nodes with labels 3 and 56 do not. 
+    
+--
+    
+  - A 2D grid represents a labirinth. The cells with passable corridors 
+    are marked with '.'. The cells with solid walls are marked with '#'. 
+    Each of those cells is an _implicit_ node
+    in a graph. There is an _implicit_ edge between two nodes if the the two cells are connected
+    along one of the four sides and they are both marked with a '.'.
+    <br/>
+    <pre>
+            ####.##.##
+            #....#..##
+            #.####.#.#
+            #......#.#
+            #####....#
+            ##########
+    </pre>
+---
+
+template: section
+
+# Graph Traversals  
+
+
+
+---
+
+## Traversing a Graph
+
+Task: given a starting node in a graph, visit all nodes that can be reached from that node.
+
+--
+
+- depth first search traversal (DFS)
+
+- breadth first search traversal (BFS)
+
+---
+name:dfs
+## Depth First Search Traversal
+
+.right-column2[
+<img width="400px" alt="directed graph" src="img/15/graphs-1.png">
+]
+
+---
+template:dfs
+- follows a single path through the graph as long as there are un-visited nodes
+- after it cannot find any more nodes to visit, it _returns_ to previous nodes and
+follows unexplored paths from them
+- needs to keep track of visited nodes
+
+<p>
+
+---
+template:dfs
+
+What order will the DFS traversal visit the nodes in the graph on the right when we start DFS at A?
+
+--
+
+There are more than one possibilities. The exact order is determine by how the graph is stored and how we access the nodes adjacent to 
+a given node.
+
+Let's look at some possible traversals
+
+---
+template:dfs 
+
+- start with A (visited: A)
+
+--
+- we have three choices for the next node: B, F, or H; let's pick F (visited: A, F)
+
+--
+- from F, we can either go to D or H; let's pick H (visited A,F,H)
+
+--
+- at H, the only choices are A and F and they are both visited, so we go back to F and 
+    look for other options; the only option is D (visited: A,F,H,D) 
+
+--
+- from D, we can got to E, G, or C (since F has been visited before); let's  pick G
+    (visited: A,F,H,D,G)
+
+--
+- G has no un-visited neightbors, so we go back to D; let's pick E (visited: A,F,H,D,G,E)
+
+--
+- E's only un-visited neighbor is B, so we go there;  (visited: A,F,H,D,G,E,B)
+
+--
+- B's unvisited neighbor is C, so we go there;  (visited: A,F,H,D,G,E,B,C) 
+
+--
+- C's unvisited neighbor is J, so we go there;  (visited: A,F,H,D,G,E,B,C,J) 
+
+--
+
+At this point we have visited all the nodes and our traversal is:
+<br/>
+A, F, H, D, G, E, B, C, J
+</br>
+
+But an algorihtm would need to verify that all the nodes have been visited. 
+
+---
+
+template: dfs 
+
+Here are two other DFS traversals starting at node A: 
+
+- A, B, E, D, F, H, G, C, J
+
+- A, B, C, J, D, E, F, H, G
+
+--
+
+__Task__
+
+List all possible traversals starting at node with label J. 
+
+---
+template:dfs
+
+An algorithm using the adjacency list, `adj`, of a graph with 
+`n` nodes and `m` edges, `O(n+m)`
+
+.below-column2[
+
+
+  ```
+  visited[N] - boolean array with all values set initially to false
+
+  dfs ( start )
+      if visited[start] return   //already processed this node
+
+      visit/process the node 
+      
+      visited[start] = true      //mark node as visited
+
+      for node in adj[start]
+          dfs( node )
+
+  ```
+]
+---
+name:bfs
+## Breadth First Search Traversal
+
+.right-column2[
+<br/><br/>
+<img width="400px" alt="directed graph" src="img/15/graphs-1.png">
+]
+
+---
+template:bfs
+
+- visits the nodes in order of their distance from a starting node
+(distance = path length between nodes)
+  - visit all nodes whose distance from the start node is 1
+  - visit all nodes whose distance from the start node is 2
+  - ...
+
+--
+
+What order will the BFS traversal visit the nodes in the graph on the right when we start BFS at A?
+
+--
+
+Again, the exact ordering will depend on how we store the graph and how we access nodes adjacent to a given node. 
+
+Here are possible traversals for the graph 
+on the right. 
+
+  - A, B, F, H, C, E, D, G, J
+
+--
+
+__Question__ Which of the values in the above traversal could be moved and to where
+so that it is still a BFS traversal? 
+
+--
+
+__Task__ Propose a BFS traversal of this graph starting at node J.
+
+---
+template:bfs
+
+An algorithm using the adjacency list `adj` of a graph with `n` nodes and `m` edges, `O(n+m)`
+
+```
+  visited[N] - boolean array with all values set initially to false
+  queue      - to store nodes that we need to go back to 
+
+  bfs ( start )
+      visited [ start ] = true
+      visit/process the start node 
+      queue.push( start )
+
+      while queue is not empty
+          node = queue.pop()
+          for n in adj( node )
+              if ! visited[n]
+                  visited [n] = true
+                  visit/process n 
+                  queue.push( n )
+
+```
+
+---
+
+template:section
+
+# Interesting Problems
+
+
+---
+
+## The Traveling Salesman Problem (TSP)
+
+__What is TSP?__
+
+- Problem Statement: Given a list of cities and the distances between each pair of cities, find the shortest possible route that visits each city exactly once and returns to the origin city.
+
+- Real-world Applications:
+	- Logistics: Optimizing delivery routes for trucks.
+	- Manufacturing: Minimizing the movement of robotic arms.
+	- Tourism: Planning the most efficient sightseeing tour.
+
+- Graph Representation
+
+	- Nodes (Vertices): Represent the cities.
+    - Edges (Links): Represent the paths (distances) between cities.
+    - Weighted Graph: Edges have weights representing the distances.
+
+
+---
+
+## TSP Example 
+
+
+
+What is a possible TSP solution for this graph? 
+
+Assume we start at node `A`?
+
+
+<img width="400px" alt="simple graph with four nodes and all edges of weight 1" src="img/15/sample.png">
+
+--
+
+A -- B -- D -- C -- A
+
+A -- C -- D -- B -- A 
+
+---
+
+## TSP Example 
+
+
+
+What is a possible TSP solution for this graph? 
+
+Assume we start at node `A`?
+
+
+<img width="500px" alt="simple graph with four nodes and all edges of weight 1" src="img/15/sample1.png">
+
+--
+
+A -- D -- C -- B -- E -- A 
+
+---
+
+## Graph Coloring
+
+How many colors do we need to color a map so that no countries that share a border have the same color?
+
+
+
+<img width="400px" alt="simple graph with four nodes and all edges of weight 1" src="http://4.bp.blogspot.com/-kmwsRHp-sz4/TWDcs6KeBkI/AAAAAAAAAGA/mpU26WQAohE/s1600/blank_europe_map.gif">
+
+
+---
+
+## Graph Coloring
+
+How many colors do we need to color a map so that no countries that share a border have the same color?
+
+
+
+<img width="400px" alt="simple graph with four nodes and all edges of weight 1" src="http://www.freeworldmaps.net/europe/europe-blank-map-countries-hd.jpg">
+
+
+---
+
+## Graph Coloring
+
+How many colors do we need to color a map so that no countries that share a border have the same color?
+
+
+
+<img width="400px" alt="simple graph with four nodes and all edges of weight 1" src="https://printablemapforyou.com/wp-content/uploads/2019/03/free-political-maps-of-europe-mapswire-large-map-of-europe-printable.jpg">
+
+
+---
+
+
+
+
+
+template:section
+
+# Examples and Things to Think About
+
+---
+
+## Graph Implementation
+
+Graphs serve many different purposes and their exact implementation 
+needs to suit a specific purpose, so there are generally not among 
+data structures implemented in programming language libraries. 
+
+Implement a graph. 
+Pick any implementation you want (or try it with all of them).
+
+Assume that the graph nodes have integer labels starting with 1 up to N.
+The graph is undirected and its description is given as a list of edges: <br/>`a b` indicates that 
+there is an edge from `a` to `b`. 
+
+--
+
+How would your implementation be different for a directed graph? 
+
+--
+
+Modify your code so that it can handle weighted graphs. In this case
+the graph description would be given as a list of edges: 
+<br/>`a b w` indicates 
+that there is an edge from `a` to `b` with weight `w`. 
+
+---
+
+template: challenge
+
+## Challenge
+
+Design algorithms for the following problems. 
+
+- Given a pair of nodes, find the length of the shortest path from one to 
+the other. Solve this for unweighted and weighted graphs. 
+
+- Given a node, find the length of the shortest path from that node to all other nodes in the graph. Solve this for unweighted and weighted graphs. 
+
+- Determine if a graph is connected or disconnected (algorithmically, not visually). If it is disconnected, figure out the number of nodes in each
+connected component. 
+
+- Determine if a graph is a tree (algorithmically, not visually).
+
+
+
+---
+## Solving Problems
+
+Try to use your graph implementation to solve the following problems:
+
+- [Ab Initio](https://open.kattis.com/problems/abinitio) - the description
+is long, but it is a fairly easy problem if you have a graph implementation
+already 
+
+- [Flying Safely](https://open.kattis.com/problems/flyingsafely)
+
+- [Cantina of Babel](https://open.kattis.com/problems/cantinaofbabel) - this is not a difficult problem, but you need to first figure out 
+how to map it to a graph. 
+
+
+
+
+
+</optgroup>
+
+
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+    <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+
+
+<script type="text/x-mathjax-config">
+   MathJax.Hub.Config({
+     extensions: ["tex2jax.js"],
+     jax: ["input/TeX", "output/HTML-CSS"],
+     tex2jax: {
+       inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+       displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+       processEscapes: true
+     },
+     "HTML-CSS": { availableFonts: ["TeX"] }
+   });
+</script>
+
+
+  </body>
+</html>

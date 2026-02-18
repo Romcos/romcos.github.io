@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Recursion</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## Recursion
+
+.author[
+Instructor: Joanna Klukowska <br><br><br>
+]
+
+.license[
+Copyright 2020 Joanna Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+
+---
+
+template: section
+
+## Generating Sequences
+
+---
+
+## Generate All Sequences ...
+
+In some situations we want to be able to produce all possible sequences of
+some set of characters.
+
+--
+
+.right-column2-small[
+<a title="Valentijn Sessink, CC0, via Wikimedia Commons"
+href="https://commons.wikimedia.org/wiki/File:Scrabble-letters-modern-nederlands.jpg">
+<img width="170" alt="Scrabble-letters-modern-nederlands"
+src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/Scrabble-letters-modern-nederlands.jpg/128px-Scrabble-letters-modern-nederlands.jpg"></a>
+]
+__Example__
+
+Imagine you are implementing a program that is a _Scrabble Helper_. The
+player has a particular set of letters and your program is supposed to come
+up with all seven letter words that can be created from those letters.
+
+An algorithm:
+- create all possible sequences of the letters
+- check each sequence in an approved dictionary (throw out the ones that are not there)
+
+(This is a very slow algorithm, but ... )
+
+--
+
+-----
+
+We'll start with slightly easier examples:
+- generate all sequences of two characters: '0' and '1'
+(or all binary sequences) of a particular length
+- generate all sequences of ten characters: '0', '1', ..., '9'
+(or all decimal sequences) of a particular length
+- generate all binary sequences that do not end in a zero
+- generate all binary sequences that do not have a 1 in a third position
+- generate all binary sequences that have fewer than 5 ones
+- generate ...
+
+
+---
+
+## Generate All Binary Sequence of Length `n`
+
+
+If `n=3`, all binary sequences of length `3` are
+`000`, `001`, `010`, `011`, `100`, `101`, `110`, `111`.
+
+There are eight of them because we have three positions to fill
+and two options for each position, so $2^3 = 8$.
+
+- Decide what the base case could be (there may be different ones that will work)
+
+- Decide what the recursive case could be.
+
+- Put together an algorithm that accomplishes the task.
+
+
+---
+exclude:false
+
+## Generate All Binary Sequence of Length `n`
+
+__Idea__ generate each sequence starting from zero length and adding
+either `0` or `1`. The recursive calls need to _grow_ the sequence until
+we reach the desired length (base case).
+
+--
+
+__base case__
+`len(sequence) == n`
+
+--
+
+__recursive case__
+- add 0 to the current sequence: `sequence + '0'`
+- add 1 to the current sequence: `sequence + '1'`
+
+--
+
+__algorithm__
+
+_input_: `sequence=""` is the initial sequence, `n`  is the desired length
+
+```
+getAllBinarySequences ( n )
+  getAllBinarySequences ( n, seq = "")
+
+getAllBinarySequences ( n, seq )
+  if len(seq) = n
+    we have one of the sequences
+    return
+  seq0 = seq + '0'
+  seq1 = seq + '1'
+  generateAllBinarySequences( n, seq0)
+  generateAllBinarySequences( n, seq1)
+```
+
+---
+
+## Generate All Binary Sequence of Length `n`
+
+Finally, we can convert the algorithm into Java code.
+For simplicity, we print the sequence once it is ready. We could also
+add it to a list of some kind for later usage.
+
+```Java
+void getAllBinarySequences ( int length ) {
+  getAllBinarySequencse(length, "");
+}
+
+void getAllBinarySequences ( int length, String seq ) {
+  if (seq.length() == length ) {//reached the desired length
+    System.out.printf("%s %n", seq.toString() );
+    return;
+  }
+  /add the next bits to the sequence (two possibilities)
+  String seq0 = seq + "0"; //add zero to the current sequence
+  String seq1 = seq + "1"; //replace the zero with one
+  getAllBinarySequences( length, seq0);
+  getAllBinarySequences( length, seq1);
+
+}
+```
+
+--
+.smaller[
+A few questions:
+- what will be the first string printed?
+- what will be the last string printed?
+- how would the answers to above questions change if the revered 
+the last two lines of the above code? 
+]
+---
+exclude:false
+name:no-0-in-second
+
+## No `'0'` in the Second Position
+
+
+A slight variation of this problem is to generate all sequences
+except the ones that meet some condition. For example:
+exclude sequences that have a zero in the second position (zero-based indexing).
+
+--
+
+We can generate all sequences as before and then skip the ones that
+we do not want.
+
+--
+
+__algorithm__
+
+_input_: `sequence=""` is the initial sequence, `n`  is the desired length
+
+```
+getAllBinarySequences ( n )
+  getAllBinarySequences ( n, seq = "")
+
+getAllBinarySequences ( n, seq )
+  if len(seq) = n
+*   if (seq[2] != '0' )
+*     we have one of the sequences
+    return
+  seq0 = seq + '0'
+  seq1 = seq + '1'
+  generateAllBinarySequences( n, seq0)
+  generateAllBinarySequences( n, seq1)
+```
+
+
+
+--
+
+<br/>
+.center80[
+.red[
+But this means that we are creating many more sequences than we need to (twice as many)!
+<br/>It all takes time, especially for large `n`.
+<br/>Can we avoid generating sequences that we do not want?
+]
+]
+
+---
+template: no-0-in-second
+
+We want to stop the algorithm from adding the zero to the second position:
+
+__better algorithm__
+
+_input_:  `n`  is the desired length
+
+```
+getAllBinarySequences ( n )
+  getAllBinarySequences ( n, seq = "")
+
+getAllBinarySequences ( n, seq )
+  if len(seq) = n
+    we have one of the sequences
+    return
+* if len(seq) != 2
+*   //do not add '0' if adding to the second position
+*   seq0 = seq + '0'
+*   generateAllBinarySequences( n, seq0)
+  seq1 = seq + '1'
+  generateAllBinarySequences( n, seq1)
+```
+
+--
+
+<br/>
+.center80[
+.red[
+This way we avoid making a lot of unnecessary recursive calls.
+]
+]
+---
+template:section
+
+# Backtracking
+
+---
+
+## Backtracking
+
+__Backtracking__ is an approach of solving problems in which we keep going as
+long as we can, and if we run into a dead end, we just go back to a previous place
+where we had a choice to make and pick an alternative way.
+
+--
+
+If this seems a bit too abstract, think of going through a maze:
+- each time we come to a fork (with two or more options), we follow just one
+- if that path goes to the exit, we got lucky,
+- if it we get stuck, then we go back to the place  where we made the choice
+and pick an alternative path
+
+---
+name:target_search
+
+## Is there a subset that adds up to a target?
+
+Given an array of non-negative integers and a target value, determine if there are any values within the array that add up to the target.
+
+--
+
+Example
+
+```
+[ 3, 8, 1, 0, 5]  target 4  ---> yes
+```
+--
+```
+[ 3, 8, 1, 0, 5]  target 14  ---> yes
+```
+--
+```
+[ 3, 8, 1, 0, 5]  target 7  ---> no
+```
+--
+```
+[ 3, 8, 1, 0, 5]  target 10  ---> no
+```
+--
+```
+[ 3, 8, 1, 0, 5]  target 20  ---> no
+```
+
+
+---
+name: target_search_approach1
+template: target_search
+
+
+### __Approach 1__
+
+- start with sum = 0
+- gradually increase it until sum is equal to target (or not)
+
+--
+
+
+__base case__
+
+- when sum = target, we have yes
+
+--
+
+- when sum > target, then the current path is a no (but there may be another path that gives us a yes)
+
+--
+
+__recursive steps__ (or how do we get to the base case)
+
+- for each value in the array we have two options:
+    - use it to count towards our target (add it to the current sum)
+    - do not use it (do not change the current sum)
+  (keep trying both option in recursive calls)
+
+
+
+---
+
+template: target_search_approach1
+
+```
+
+  find_target( array, target, index, sum )
+
+    if sum == target   //found it!
+      return true
+
+    if sum > target   //too much, no point in continuing
+      return false
+
+    // recursive case
+        // use the element at index
+        // do not use the element at index
+
+```
+
+
+---
+
+template: target_search_approach1
+
+```
+
+  find_target( array, target, index, sum )
+
+    if sum == target   //found it!
+      return true
+
+    if sum > target   //too much, no point in continuing
+      return false
+
+    return find_target( array, target, index + 1, sum + array[index])  // use the element at index
+            ||
+           find_target( array, target, index + 1, sum )  // do not use the element at index
+
+
+
+```
+
+--
+<br/>
+
+- Is there a reason why above would not work?
+  <br/>What happens if the array is [1, 1, 1, 1] and target = 10?
+
+---
+
+template: target_search_approach1
+
+```
+
+  find_target( array, target, index, sum )
+
+    if sum == target   //found it!
+      return true
+
+    if sum > target   //too much, no point in continuing
+      return false
+
+    if index == array.size  //stop if the end of the array is reached
+      return false
+
+    return find_target( array, target, index + 1, sum + array[index])  // use the element at index
+            ||
+           find_target( array, target, index + 1, sum )  // do not use the element at index
+
+
+
+```
+
+
+---
+name: target_search_approach2
+template: target_search
+
+
+### __Approach 2__
+
+- start with sum = target
+- gradually decrease it until sum is equal to zero (or below)
+
+--
+
+
+__base case__
+
+- when sum = 0, we have yes
+
+--
+
+- when sum < 0, then the current path is a no (but there may be another path that gives us a yes)
+
+--
+
+__recursive steps__ (or how do we get to the base case)
+
+- for each value in the array we have two options:
+    - use it to count towards our target (subtract it from the current sum)
+    - do not use it (do not change the current sum)
+  (keep trying both option in recursive calls)
+
+---
+
+template:section
+
+## Avoiding Repeated Calls
+
+---
+
+## Fibonacci Numbers - A Familiar Classic
+
+$$fib(n) = fib(n-1) + fib(n-2)$$
+$$fib(0) = 0$$
+$$fib(1) = 1$$
+
+--
+
+Here is one way to compute Fibonacci Numbers using recursion:
+
+```
+int fib ( int N ) {
+  if N <= 1
+    return N
+  return fib (N-1) + fib(N+2)
+}
+```
+--
+
+So what is wrong with that implementation? <br>
+
+--
+
+It computes the value of each Fibonacci number multiple times!
+
+---
+name:fib_memo
+
+## Fibonacci Numbers without repeated calls
+
+Let's use an array to _remember_ the values that were previously computed
+
+--
+
+```
+  //initialize the array to all -1 (value impossible for Fib numbers)
+  //to indicate that the value has not been calculated yet
+
+  int memo[MAX_N];
+  for i in 0 ... MAX_N:
+    memo [i] = -1;
+
+```
+
+---
+template:fib_memo
+
+
+```
+  //initialize the array to all -1 (value impossible for Fib numbers)
+  //to indicate that the value has not been calculated yet
+
+  int memo[MAX_N];
+  for i in 0 ... MAX_N:
+    memo [i] = -1;
+
+  //use similar function to before, but check if the value was already
+  //calculated before making recursive calls
+
+  int fib ( int N ) {
+    if memo[N] != -1
+        return memo[N]    //retrieve it from memory
+    if N <= 1
+        return N
+    memo[N] = fib (N-1) + fib(N+2)  //save it for future use
+    return memo[N]
+  }
+```
+
+---
+## Fibonacci Numbers - start from the bottom
+
+Calculate all Fibonacci numbers from 0 to N
+
+```
+int fib[MAX_N]
+
+void fib_all ( int N ) {
+  fib[0] = 0
+  fib[1] = 1
+  for i in 2 ... N:
+    fib[i] = fib[i-1] + fib[i-2]
+}
+```
+--
+
+Calculate the N'th Fibonacci number
+
+
+```
+int fib ( int N ) {
+  if N <= 1
+      return N
+  int prev1 = 0
+  int prev2 = 1
+  for i in 2 ... N:
+    int next = prev1 + prev2
+    prev2 = prev1
+    prev1 = next
+  return prev1
+}
+```
+---
+
+
+
+
+
+template:section
+
+# Examples and Things to Think About
+
+---
+
+## All Decimal Sequences
+
+Design an algorithm that generates all decimal sequences (using characters
+'0', '1', ..., '9').
+
+Follow the steps that we did for the binary sequences:
+- decide on the base case
+- decide on a recursive case
+- design an algorithm (specifying what its initial inputs are)
+
+---
+
+## All Sequences For Scrabble
+
+Design an algorithm for generating all sequences of characters given a set of characters
+(a sequence can use a particular character multiple times or not at all). <br/>
+HINT: this is just like a previous-slide problem, but uses characters instead of digits.
+
+__Part 2__
+
+Do the same as above, but do not reuse characters. This limits the number of sequences
+that can be produced. <br>
+For example, given letters 'c', 'a', 't', we can create "atc", "act", "cat", "cta", "tac", "tca".
+
+__Part 3__
+
+Do the same as above, but generate __only__ sequences that are words in a given dictionary.
+Try to do this efficiently, so that you do not generate sequences that _do not lead_ to a word.
+
+---
+## Is there a subset that adds up to a target?
+
+1. Design pseudocode for approach 2. Test it with a few examples by hand to make sure it works.
+
+2. Implement both approaches.
+
+3. Create some _good_ tests for your program. For each test, write a sentence describing what it is actually testing.
+
+4. How would approach 1 and 2 have to change if we would allow negative values in the array?
+
+
+    </textarea>
+
+
+
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
+    <script type="text/javascript">
+      //var slideshow = remark.create();
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
+
+
+
+  </body>
+</html>

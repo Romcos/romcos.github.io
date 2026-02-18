@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>BST</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## BST - Implementation
+
+.author[
+Instructor: Joanna Klukowska <br><br><br>
+]
+
+.license[
+Copyright 2020 Joanna Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+
+---
+
+template: breakout
+
+
+
+### What does this tree look like?
+
+```java
+tree.add("salmon");
+tree.add("flounder");
+tree.add("grouper");
+tree.add("cod");
+tree.add("carp");
+tree.add("tilapia");
+tree.add("catfish");
+tree.add("bluefish");
+tree.add("tuna");
+tree.add("yellowtail");
+tree.add("herring");
+tree.add("sturgeon");
+```
+
+With your group, draw out the tree that results from the
+above sequence of `add` operations. Assume you start with an
+empty tree.
+
+Use [Google Jamboard](https://jamboard.google.com/)
+to draw it in a collaborative way.
+Use the name <br>"breakout room NUM" in which you replace NUM with the number of your breakout room.
+Share it with jk157@nyu.edu as well as all your room members.
+
+
+---
+template: breakout
+
+### What is this?
+
+.left-column2[
+.smaller[
+```
+salmon
+|--flounder
+   |--cod
+      |--carp
+         |--bluefish
+            |--->
+            |--->
+         |--catfish
+            |--->
+            |--->
+      |--->
+   |--grouper
+      |--->
+      |--herring
+         |--->
+         |--->
+|--tilapia
+   |--sturgeon
+      |--->
+      |--->
+   |--tuna
+      |--->
+      |--yellowtail
+         |--->
+         |--->
+
+```
+]]
+.right-column2[
+Try to answer the following questions:
+- what does the _drawing_ on the left represent?
+- how does it relate to the tree that you drew in the previous step?
+- can you come up with an algorithm that produces that kind of output
+given a binary search tree?
+
+<br/>
+<br/>
+
+When we come back to the main room, some rooms will get a chance to answer these
+questions, so make sure you can explain your answers.
+
+]
+
+
+
+---
+template: breakout
+
+.red[WARNING: you will not be able to start this part until after we discuss the previous parts
+in the main room. ]
+
+### Implement the `add`
+
+- One person in your room should open the Ed workspace that contains the skeleton for the BST class.
+That person should share the workspace with the other members of the room and with jk157@nyu.edu.
+__Do not make it public.__
+
+- Rename your workspace `BST-breakout-NUM` in which you replace `NUM` with the number of your workspace.
+
+- Implement the `add` method using a recursive approach.
+This should be collaborative work and discussion, not parallel development.
+Decide what needs to be checked and how things should be validated. Make sure that you think
+of any special cases (for example, adding to an empty tree or adding a duplicate of an existing value).
+
+
+
+When we come back to the main room, some rooms will get a chance to showcase their code
+so make sure you keep it _presentable_.
+
+
+
+</optgroup>
+
+
+
+    </textarea>
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
+
+
+
+  </body>
+</html>
