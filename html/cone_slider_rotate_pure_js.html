@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Cone (Pure JS)</title>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #ffffff;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .controls label {
+      font-weight: 600;
+    }
+
+    #epsSlider {
+      width: 340px;
+    }
+
+    #rotateBtn {
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+
+    #plot {
+      width: 100%;
+      height: 82vh;
+      min-height: 520px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="controls">
+      <label for="coneType">cone</label>
+      <select id="coneType">
+        <option value="eps">x_i ≥ eps ||x||</option>
+        <option value="gamma">x_i ≥ gamma (x1+x2+x3)</option>
+      </select>
+      <label id="paramLabel" for="epsSlider">epsilon</label>
+      <input id="epsSlider" type="range" />
+      <span id="epsValue"></span>
+      <button id="rotateBtn" type="button">Shuffle</button>
+      <span id="intersectStatus"></span>
+    </div>
+    <div id="plot"></div>
+  </div>
+
+  <script>
+    const epsMin = -1 / Math.sqrt(3);
+    const epsMax =  1 / Math.sqrt(3);
+    const sliderSteps = 300;
+    const gammaUpper = 1 / 3;
+    const gammaSliderMin = 0.0;
+    const gammaSliderMax = 0.999;
+    const gammaSliderSteps = 900;
+
+    const coneType = document.getElementById('coneType');
+    const paramLabel = document.getElementById('paramLabel');
+    const slider = document.getElementById('epsSlider');
+    const epsValue = document.getElementById('epsValue');
+    const rotateBtn = document.getElementById('rotateBtn');
+    const intersectStatus = document.getElementById('intersectStatus');
+    const plotDiv = document.getElementById('plot');
+
+    let currentConeMode = 'eps';
+    let currentParam = 0.0;
+    let currentRotation = [
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ];
+    let isAnimating = false;
+
+    function gammaFromSliderValue(u) {
+      const uu = Math.max(gammaSliderMin, Math.min(gammaSliderMax, u));
+      return gammaUpper - Math.tan((Math.PI / 2) * (1 - uu));
+    }
+
+    function sliderValueFromGamma(gamma) {
+      const clamped = Math.min(gammaUpper, gamma);
+      const u = 1 - Math.atan(gammaUpper - clamped) / (Math.PI / 2);
+      return Math.max(gammaSliderMin, Math.min(gammaSliderMax, u));
+    }
+
+    function configureSliderForMode(mode) {
+      if (mode === 'eps') {
+        paramLabel.textContent = 'epsilon';
+        slider.min = String(epsMin);
+        slider.max = String(epsMax);
+        slider.step = String((epsMax - epsMin) / sliderSteps);
+        slider.value = String(currentParam);
+      } else {
+        paramLabel.textContent = 'gamma';
+        slider.min = String(gammaSliderMin);
+        slider.max = String(gammaSliderMax);
+        slider.step = String((gammaSliderMax - gammaSliderMin) / gammaSliderSteps);
+        slider.value = String(sliderValueFromGamma(currentParam));
+      }
+    }
+
+    function currentParamFromSlider() {
+      const v = Number(slider.value);
+      if (currentConeMode === 'eps') return v;
+      return gammaFromSliderValue(v);
+    }
+
+    function fmtParam(mode, value) {
+      if (mode === 'eps') return Number(value).toFixed(4);
+      if (value < -1000) return '-∞ (very negative)';
+      if (value < -100) return Number(value).toExponential(2);
+      return Number(value).toFixed(4);
+    }
+
+    function titleFor(mode, value) {
+      if (mode === 'eps') {
+        return `3D Cone from x_i ≥ ε ||x|| with ε=${fmtParam(mode, value)}`;
+      }
+      return `3D Cone from x_i ≥ γ (x1+x2+x3) with γ=${fmtParam(mode, value)}`;
+    }
+
+    function matMul3(A, B) {
+      const C = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ];
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          C[i][j] = A[i][0] * B[0][j] + A[i][1] * B[1][j] + A[i][2] * B[2][j];
+        }
+      }
+      return C;
+    }
+
+    function applyTranspose(R, p) {
+      return [
+        R[0][0] * p[0] + R[1][0] * p[1] + R[2][0] * p[2],
+        R[0][1] * p[0] + R[1][1] * p[1] + R[2][1] * p[2],
+        R[0][2] * p[0] + R[1][2] * p[1] + R[2][2] * p[2],
+      ];
+    }
+
+    function pointInCurrentCone(x, y, z, mode, param, R, tol = 1e-10) {
+      const p0 = applyTranspose(R, [x, y, z]);
+
+      if (mode === 'eps') {
+        const r = Math.sqrt(p0[0] * p0[0] + p0[1] * p0[1] + p0[2] * p0[2]);
+        if (r <= tol) return true;
+        const threshold = param * r - tol;
+        return (p0[0] >= threshold) && (p0[1] >= threshold) && (p0[2] >= threshold);
+      }
+
+      const s = p0[0] + p0[1] + p0[2];
+      const threshold = param * s - tol;
+      return (p0[0] >= threshold) && (p0[1] >= threshold) && (p0[2] >= threshold);
+    }
+
+    function hasNonTrivialFinitePoint(X, Y, Z, tol = 1e-6) {
+      for (let i = 0; i < X.length; i++) {
+        for (let j = 0; j < X[0].length; j++) {
+          const x = X[i][j];
+          const y = Y[i][j];
+          const z = Z[i][j];
+          if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) {
+            const n = Math.sqrt(x * x + y * y + z * z);
+            if (n > tol) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function setIntersectionStatus(intersects) {
+      if (intersects) {
+        intersectStatus.textContent = 'intersection with positive orthant';
+        intersectStatus.style.color = '#0f9d58';
+        intersectStatus.style.fontWeight = '700';
+      } else {
+        intersectStatus.textContent = 'no intersection';
+        intersectStatus.style.color = '#d93025';
+        intersectStatus.style.fontWeight = '700';
+      }
+    }
+
+    function generateConePatchEps(axis, eps, hMax = 1.0, hRes = 50, thetaRes = 80) {
+      const x = Array.from({ length: hRes }, () => Array(thetaRes));
+      const y = Array.from({ length: hRes }, () => Array(thetaRes));
+      const z = Array.from({ length: hRes }, () => Array(thetaRes));
+
+      const rho = Math.sqrt(Math.max(1 - eps * eps, 0));
+      const c = eps / Math.max(rho, 1e-12);
+      const cClamped = Math.max(-1, Math.min(1, c));
+      const thetaMin = Math.asin(cClamped);
+      const thetaMax = Math.acos(cClamped);
+
+      for (let i = 0; i < hRes; i++) {
+        const h = (hMax * i) / (hRes - 1);
+        for (let j = 0; j < thetaRes; j++) {
+          const s = j / (thetaRes - 1);
+          const theta = thetaMin + s * (thetaMax - thetaMin);
+
+          const uAxis = eps;
+          const uOther1 = rho * Math.cos(theta);
+          const uOther2 = rho * Math.sin(theta);
+
+          const u = [0, 0, 0];
+          if (axis === 0) {
+            u[0] = uAxis;
+            u[1] = uOther1;
+            u[2] = uOther2;
+          } else if (axis === 1) {
+            u[1] = uAxis;
+            u[2] = uOther1;
+            u[0] = uOther2;
+          } else {
+            u[2] = uAxis;
+            u[0] = uOther1;
+            u[1] = uOther2;
+          }
+
+          x[i][j] = h * u[0];
+          y[i][j] = h * u[1];
+          z[i][j] = h * u[2];
+        }
+      }
+
+      return { x, y, z };
+    }
+
+    function normalizeVec(v) {
+      const n = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+      return [v[0] / n, v[1] / n, v[2] / n];
+    }
+
+    function generateConePatchGamma(axis, gamma, hMax = 1.0, hRes = 50, tRes = 60) {
+      const x = Array.from({ length: hRes }, () => Array(tRes));
+      const y = Array.from({ length: hRes }, () => Array(tRes));
+      const z = Array.from({ length: hRes }, () => Array(tRes));
+
+      const a = gamma;
+      const b = 1 - 2 * gamma;
+
+      let A, B;
+      if (axis === 0) {
+        A = [a, a, b];
+        B = [a, b, a];
+      } else if (axis === 1) {
+        A = [b, a, a];
+        B = [a, a, b];
+      } else {
+        A = [a, b, a];
+        B = [b, a, a];
+      }
+
+      for (let i = 0; i < hRes; i++) {
+        const h = (hMax * i) / (hRes - 1);
+        for (let j = 0; j < tRes; j++) {
+          const t = j / (tRes - 1);
+          const v = [
+            (1 - t) * A[0] + t * B[0],
+            (1 - t) * A[1] + t * B[1],
+            (1 - t) * A[2] + t * B[2],
+          ];
+          const u = normalizeVec(v);
+          x[i][j] = h * u[0];
+          y[i][j] = h * u[1];
+          z[i][j] = h * u[2];
+        }
+      }
+
+      return { x, y, z };
+    }
+
+    function coneTracesForParam(mode, param) {
+      const traces = [];
+
+      for (let axis = 0; axis < 3; axis++) {
+        const surf = mode === 'eps'
+          ? generateConePatchEps(axis, param, 1.0, 50, 80)
+          : generateConePatchGamma(axis, param, 1.0, 50, 60);
+        traces.push({
+          type: 'surface',
+          x: surf.x,
+          y: surf.y,
+          z: surf.z,
+          colorscale: 'Oranges',
+          showscale: false,
+          opacity: 0.9,
+          hoverinfo: 'skip',
+          meta: { rotatable: true },
+        });
+      }
+
+      return traces;
+    }
+
+    function orthantBaselineTraces(maxCoord = 1.0) {
+      const a = maxCoord;
+
+      const planeColor = [
+        [0, 'rgba(80,110,170,0.30)'],
+        [1, 'rgba(80,110,170,0.30)'],
+      ];
+
+      function quarterDiskOnPlane(axis, rRes = 45, thetaRes = 70) {
+        const X = Array.from({ length: rRes }, () => Array(thetaRes));
+        const Y = Array.from({ length: rRes }, () => Array(thetaRes));
+        const Z = Array.from({ length: rRes }, () => Array(thetaRes));
+
+        for (let i = 0; i < rRes; i++) {
+          const r = a * (i / (rRes - 1));
+          for (let j = 0; j < thetaRes; j++) {
+            const theta = (Math.PI / 2) * (j / (thetaRes - 1));
+            const c = r * Math.cos(theta);
+            const s = r * Math.sin(theta);
+
+            if (axis === 0) {
+              X[i][j] = 0;
+              Y[i][j] = c;
+              Z[i][j] = s;
+            } else if (axis === 1) {
+              X[i][j] = s;
+              Y[i][j] = 0;
+              Z[i][j] = c;
+            } else {
+              X[i][j] = c;
+              Y[i][j] = s;
+              Z[i][j] = 0;
+            }
+          }
+        }
+
+        return { X, Y, Z };
+      }
+
+      const x0Disk = quarterDiskOnPlane(0);
+      const y0Disk = quarterDiskOnPlane(1);
+      const z0Disk = quarterDiskOnPlane(2);
+
+      const x0 = {
+        type: 'surface',
+        x: x0Disk.X,
+        y: x0Disk.Y,
+        z: x0Disk.Z,
+        colorscale: planeColor,
+        cmin: 0,
+        cmax: 1,
+        surfacecolor: x0Disk.X.map((row) => row.map(() => 0)),
+        showscale: false,
+        opacity: 0.40,
+        hoverinfo: 'skip',
+        meta: { rotatable: false, orthantSurface: true },
+      };
+
+      const y0 = {
+        type: 'surface',
+        x: y0Disk.X,
+        y: y0Disk.Y,
+        z: y0Disk.Z,
+        colorscale: planeColor,
+        cmin: 0,
+        cmax: 1,
+        surfacecolor: y0Disk.X.map((row) => row.map(() => 0)),
+        showscale: false,
+        opacity: 0.40,
+        hoverinfo: 'skip',
+        meta: { rotatable: false, orthantSurface: true },
+      };
+
+      const z0 = {
+        type: 'surface',
+        x: z0Disk.X,
+        y: z0Disk.Y,
+        z: z0Disk.Z,
+        colorscale: planeColor,
+        cmin: 0,
+        cmax: 1,
+        surfacecolor: z0Disk.X.map((row) => row.map(() => 0)),
+        showscale: false,
+        opacity: 0.40,
+        hoverinfo: 'skip',
+        meta: { rotatable: false, orthantSurface: true },
+      };
+
+      const axisStyle = {
+        type: 'scatter3d',
+        mode: 'lines',
+        line: { color: 'rgba(40,60,110,1.0)', width: 5 },
+        hoverinfo: 'skip',
+        showlegend: false,
+        meta: { rotatable: false },
+      };
+
+      const xAxis = {
+        ...axisStyle,
+        x: [0, a],
+        y: [0, 0],
+        z: [0, 0],
+      };
+
+      const yAxis = {
+        ...axisStyle,
+        x: [0, 0],
+        y: [0, a],
+        z: [0, 0],
+      };
+
+      const zAxis = {
+        ...axisStyle,
+        x: [0, 0],
+        y: [0, 0],
+        z: [0, a],
+      };
+
+      return [x0, y0, z0, xAxis, yAxis, zAxis];
+    }
+
+    function maskIntersectionWithOrthant(X, Y, Z, tol = 1e-10) {
+      const rows = X.length;
+      const cols = X[0].length;
+      const xMask = Array.from({ length: rows }, () => Array(cols));
+      const yMask = Array.from({ length: rows }, () => Array(cols));
+      const zMask = Array.from({ length: rows }, () => Array(cols));
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = X[i][j];
+          const y = Y[i][j];
+          const z = Z[i][j];
+          const inOrthant = (x >= -tol) && (y >= -tol) && (z >= -tol);
+
+          xMask[i][j] = inOrthant ? x : NaN;
+          yMask[i][j] = inOrthant ? y : NaN;
+          zMask[i][j] = inOrthant ? z : NaN;
+        }
+      }
+
+      return { x: xMask, y: yMask, z: zMask };
+    }
+
+    function intersectionHighlightTraces(coneTraces) {
+      const highlightScale = [
+        [0, 'rgba(0,180,90,0.95)'],
+        [1, 'rgba(0,180,90,0.95)'],
+      ];
+
+      return coneTraces.map((trace) => {
+        const masked = maskIntersectionWithOrthant(trace.x, trace.y, trace.z);
+        return {
+          type: 'surface',
+          x: masked.x,
+          y: masked.y,
+          z: masked.z,
+          colorscale: highlightScale,
+          surfacecolor: masked.x.map((row) => row.map(() => 0)),
+          cmin: 0,
+          cmax: 1,
+          showscale: false,
+          opacity: 1.0,
+          hoverinfo: 'skip',
+          meta: { rotatable: false, highlight: true },
+        };
+      });
+    }
+
+    function orthantIntersectionHighlightTraces(orthantSurfaceTraces, mode, param, R) {
+      const highlightScale = [
+        [0, 'rgba(0,180,90,0.95)'],
+        [1, 'rgba(0,180,90,0.95)'],
+      ];
+
+      return orthantSurfaceTraces.map((trace) => {
+        const X = trace.x;
+        const Y = trace.y;
+        const Z = trace.z;
+
+        const rows = X.length;
+        const cols = X[0].length;
+        const xMask = Array.from({ length: rows }, () => Array(cols));
+        const yMask = Array.from({ length: rows }, () => Array(cols));
+        const zMask = Array.from({ length: rows }, () => Array(cols));
+
+        for (let i = 0; i < rows; i++) {
+          for (let j = 0; j < cols; j++) {
+            const x = X[i][j];
+            const y = Y[i][j];
+            const z = Z[i][j];
+            const inCone = pointInCurrentCone(x, y, z, mode, param, R);
+            xMask[i][j] = inCone ? x : NaN;
+            yMask[i][j] = inCone ? y : NaN;
+            zMask[i][j] = inCone ? z : NaN;
+          }
+        }
+
+        return {
+          type: 'surface',
+          x: xMask,
+          y: yMask,
+          z: zMask,
+          colorscale: highlightScale,
+          surfacecolor: xMask.map((row) => row.map(() => 0)),
+          cmin: 0,
+          cmax: 1,
+          showscale: false,
+          opacity: 1.0,
+          hoverinfo: 'skip',
+          meta: { rotatable: false, orthantHighlight: true },
+        };
+      });
+    }
+
+    function refreshIntersectionHighlights() {
+      const data = plotDiv.data || [];
+      const coneTraces = data.filter((t) => t && t.meta && t.meta.rotatable);
+      const orthantSurfaceTraces = data.filter((t) => t && t.meta && t.meta.orthantSurface);
+      const coneHighlightIndices = [];
+      const orthantHighlightIndices = [];
+      for (let i = 0; i < data.length; i++) {
+        const t = data[i];
+        if (t && t.meta && t.meta.highlight) {
+          coneHighlightIndices.push(i);
+        }
+        if (t && t.meta && t.meta.orthantHighlight) {
+          orthantHighlightIndices.push(i);
+        }
+      }
+
+      if (coneTraces.length === 0 || coneHighlightIndices.length === 0) return;
+
+      const highlightTraces = intersectionHighlightTraces(coneTraces);
+      const xs = highlightTraces.map((t) => t.x);
+      const ys = highlightTraces.map((t) => t.y);
+      const zs = highlightTraces.map((t) => t.z);
+      const sc = highlightTraces.map((t) => t.surfacecolor);
+
+      Plotly.restyle(plotDiv, { x: xs, y: ys, z: zs, surfacecolor: sc }, coneHighlightIndices);
+
+      if (orthantSurfaceTraces.length > 0 && orthantHighlightIndices.length > 0) {
+        const orthHighlights = orthantIntersectionHighlightTraces(orthantSurfaceTraces, currentConeMode, currentParam, currentRotation);
+        const ox = orthHighlights.map((t) => t.x);
+        const oy = orthHighlights.map((t) => t.y);
+        const oz = orthHighlights.map((t) => t.z);
+        const osc = orthHighlights.map((t) => t.surfacecolor);
+        Plotly.restyle(plotDiv, { x: ox, y: oy, z: oz, surfacecolor: osc }, orthantHighlightIndices);
+      }
+
+      const intersects = highlightTraces.some((t) => hasNonTrivialFinitePoint(t.x, t.y, t.z));
+      setIntersectionStatus(intersects);
+    }
+
+    function quatNormalize(q) {
+      const n = Math.sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+      return [q[0] / n, q[1] / n, q[2] / n, q[3] / n];
+    }
+
+    function quatSlerp(q0, q1, t) {
+      let a = quatNormalize(q0);
+      let b = quatNormalize(q1);
+
+      let dot = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
+      if (dot < 0) {
+        b = [-b[0], -b[1], -b[2], -b[3]];
+        dot = -dot;
+      }
+
+      if (dot > 0.9995) {
+        return quatNormalize([
+          a[0] + t * (b[0] - a[0]),
+          a[1] + t * (b[1] - a[1]),
+          a[2] + t * (b[2] - a[2]),
+          a[3] + t * (b[3] - a[3]),
+        ]);
+      }
+
+      const theta0 = Math.acos(dot);
+      const sinTheta0 = Math.sin(theta0);
+      const theta = theta0 * t;
+      const sinTheta = Math.sin(theta);
+
+      const s0 = Math.cos(theta) - dot * sinTheta / sinTheta0;
+      const s1 = sinTheta / sinTheta0;
+
+      return [
+        s0 * a[0] + s1 * b[0],
+        s0 * a[1] + s1 * b[1],
+        s0 * a[2] + s1 * b[2],
+        s0 * a[3] + s1 * b[3],
+      ];
+    }
+
+    function quatToMatrix(q) {
+      const x = q[0], y = q[1], z = q[2], w = q[3];
+      return [
+        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w),     2 * (x * z + y * w)],
+        [2 * (x * y + z * w),     1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+        [2 * (x * z - y * w),     2 * (y * z + x * w),     1 - 2 * (x * x + y * y)],
+      ];
+    }
+
+    function randomSO3() {
+      const u1 = Math.random();
+      const u2 = Math.random();
+      const u3 = Math.random();
+
+      const q1 = Math.sqrt(1 - u1) * Math.sin(2 * Math.PI * u2);
+      const q2 = Math.sqrt(1 - u1) * Math.cos(2 * Math.PI * u2);
+      const q3 = Math.sqrt(u1) * Math.sin(2 * Math.PI * u3);
+      const q4 = Math.sqrt(u1) * Math.cos(2 * Math.PI * u3);
+
+      const q = quatNormalize([q1, q2, q3, q4]);
+      return { q, R: quatToMatrix(q) };
+    }
+
+    function rotateGrid(X, Y, Z, R) {
+      const rows = X.length;
+      const cols = X[0].length;
+
+      const newX = Array.from({ length: rows }, () => Array(cols));
+      const newY = Array.from({ length: rows }, () => Array(cols));
+      const newZ = Array.from({ length: rows }, () => Array(cols));
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = X[i][j];
+          const y = Y[i][j];
+          const z = Z[i][j];
+          newX[i][j] = R[0][0] * x + R[0][1] * y + R[0][2] * z;
+          newY[i][j] = R[1][0] * x + R[1][1] * y + R[1][2] * z;
+          newZ[i][j] = R[2][0] * x + R[2][1] * y + R[2][2] * z;
+        }
+      }
+
+      return { x: newX, y: newY, z: newZ };
+    }
+
+    function applyRotationToConeTraces(traces, R) {
+      return traces.map((trace) => {
+        if (!(trace && trace.type === 'surface' && trace.meta && trace.meta.rotatable)) {
+          return trace;
+        }
+        const rotated = rotateGrid(trace.x, trace.y, trace.z, R);
+        return {
+          ...trace,
+          x: rotated.x,
+          y: rotated.y,
+          z: rotated.z,
+        };
+      });
+    }
+
+    function layoutForParam(mode, param) {
+      return {
+        title: titleFor(mode, param),
+        margin: { l: 0, r: 0, b: 0, t: 50 },
+        scene: {
+          xaxis: { title: 'X', range: [-1, 1] },
+          yaxis: { title: 'Y', range: [-1, 1] },
+          zaxis: { title: 'Z', range: [-1, 1] },
+          aspectmode: 'cube',
+          uirevision: 'keep-camera',
+        },
+      };
+    }
+
+    function updateForParam(mode, param) {
+      currentConeMode = mode;
+      currentParam = param;
+
+      const baseConeTraces = coneTracesForParam(mode, param);
+      const coneTraces = applyRotationToConeTraces(baseConeTraces, currentRotation);
+      const orthantTraces = orthantBaselineTraces(1.0);
+      const orthantSurfaceTraces = orthantTraces.filter((t) => t.meta && t.meta.orthantSurface);
+      const traces = [
+        ...coneTraces,
+        ...orthantTraces,
+        ...intersectionHighlightTraces(coneTraces),
+        ...orthantIntersectionHighlightTraces(orthantSurfaceTraces, currentConeMode, currentParam, currentRotation),
+      ];
+      Plotly.react(plotDiv, traces, layoutForParam(mode, param), {
+        responsive: true,
+        displaylogo: false,
+      });
+      epsValue.textContent = fmtParam(mode, param);
+
+      const coneHighlights = intersectionHighlightTraces(coneTraces);
+      const intersects = coneHighlights.some((t) => hasNonTrivialFinitePoint(t.x, t.y, t.z));
+      setIntersectionStatus(intersects);
+    }
+
+    rotateBtn.addEventListener('click', () => {
+      if (isAnimating) return;
+
+      const { q: qTarget, R } = randomSO3();
+      const traceIndices = [];
+      const highlightIndices = [];
+      const sourceGrids = [];
+
+      for (let t = 0; t < plotDiv.data.length; t++) {
+        const trace = plotDiv.data[t];
+        if (trace && trace.meta && (trace.meta.highlight || trace.meta.orthantHighlight)) {
+          highlightIndices.push(t);
+        }
+        if (!trace || trace.type !== 'surface' || !(trace.meta && trace.meta.rotatable)) continue;
+        traceIndices.push(t);
+        sourceGrids.push({ x: trace.x, y: trace.y, z: trace.z });
+      }
+
+      if (traceIndices.length === 0) return;
+
+      isAnimating = true;
+      rotateBtn.disabled = true;
+
+      if (highlightIndices.length > 0) {
+        Plotly.restyle(plotDiv, { visible: false }, highlightIndices);
+      }
+
+      const qIdentity = [0, 0, 0, 1];
+      const durationMs = 550;
+      const t0 = performance.now();
+
+      const animate = (now) => {
+        const alpha = Math.min(1, (now - t0) / durationMs);
+        const eased = alpha < 0.5
+          ? 2 * alpha * alpha
+          : 1 - Math.pow(-2 * alpha + 2, 2) / 2;
+
+        const qStep = quatSlerp(qIdentity, qTarget, eased);
+        const RStep = quatToMatrix(qStep);
+
+        const xs = [];
+        const ys = [];
+        const zs = [];
+
+        for (let i = 0; i < sourceGrids.length; i++) {
+          const rotated = rotateGrid(sourceGrids[i].x, sourceGrids[i].y, sourceGrids[i].z, RStep);
+          xs.push(rotated.x);
+          ys.push(rotated.y);
+          zs.push(rotated.z);
+        }
+
+        Plotly.restyle(plotDiv, { x: xs, y: ys, z: zs }, traceIndices);
+
+        if (alpha < 1) {
+          requestAnimationFrame(animate);
+          return;
+        }
+
+        currentRotation = matMul3(R, currentRotation);
+        if (highlightIndices.length > 0) {
+          Plotly.restyle(plotDiv, { visible: true }, highlightIndices);
+        }
+        refreshIntersectionHighlights();
+        isAnimating = false;
+        rotateBtn.disabled = false;
+      };
+
+      requestAnimationFrame(animate);
+    });
+
+    slider.addEventListener('input', (e) => {
+      if (isAnimating) return;
+      const param = currentParamFromSlider();
+      updateForParam(currentConeMode, param);
+    });
+
+    coneType.addEventListener('change', (e) => {
+      if (isAnimating) return;
+
+      const mode = e.target.value;
+      currentConeMode = mode;
+      currentParam = mode === 'eps' ? 0.0 : 0.0;
+      configureSliderForMode(mode);
+      updateForParam(mode, currentParam);
+    });
+
+    configureSliderForMode(currentConeMode);
+    updateForParam(currentConeMode, currentParam);
+  </script>
+</body>
+</html>
