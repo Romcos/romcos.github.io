@@ -590,13 +590,13 @@ is similar to what we will need for other algorithms.
 
 ## Binary Tree Size
 
-How are we going to compute the number of nodes in the tree?
+Computing the number of nodes
 
 --
 name: size-binary
 
 - If the tree has no nodes, then its size is zero.
-- If the tree has at least one node it is the root node.
+- Otherwise, starting at the root,
     - we can _ask_ its left child for the size of the subtree rooted at the left child
     - we can _ask_ its right child for the size of the subtree rooted at the right child
     - add one (for the root node itself) to the sum of the above values
@@ -638,8 +638,7 @@ template: size-binary
 ]
 ]
 --
-This gives us total number of nodes in the tree. Here is the pseudocode for
- recursive algorithm for the size method of a binary tree:
+Here is the pseudocode (recursive):
 
 ```
 int size ()
@@ -656,9 +655,8 @@ int size ( BTNode<E> root )
 ## Binary Tree Size - Iterative
 
 
-- When we looked at iterative and recursive implementations of the size method
-for the linked list they were not significantly different in complexity of the code and,
-at least for some of us, the iterative method was a bit more intuitive.
+- The iterative and recursive implementations of the size method
+for  __linked list__  were not significantly different in complexity of the code.
 
 .left-column2[
 ```
@@ -692,18 +690,13 @@ int size (Node n) {
 
 ]
 
-- The iterative algorithm for computing a size of a binary tree is much more
-complex (in terms of code) than its recursive equivalent.
+- The iterative algorithm for computing a size of a binary tree is more
+complex (in terms of code) than its recursive equivalent, but instructive.
 
 ---
 
 ## Binary Tree Size - Iterative
 
-- An iterative algorithm for size of a binary tree needs to keep track of which branches
-have been explored (i.e., counted) and which ones still need to be processed. Since each node
-can have up to two children nodes, there is a potential branch at every single node.
-
---
 
 - Here is the pseudocode for the iterative implementation of a size method.
 
