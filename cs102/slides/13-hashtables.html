@@ -204,40 +204,34 @@ template:section
 
 ---
 
-## `Hashtable<K,V>`  vs  `HashMap<K,V>` vs 
+## `HashMap<K,V>` vs `TreeMap<K,V>` 
 
 .left-column2[
-__`Hashtable<K,V>`__ class
+__`HashMap<K,V>`__ class
 
-- https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Hashtable.html
+- <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashMap.html" target="_blank">documentation</a>
 
-- `class Hashtable<K,V> implements Map<K,V>`
+- `class HashMap<K,V> implements Map<K,V>`
 
   This class implements a hash table, which maps keys to values.
 
-  Any non-null object can be used as a `key` or as a `value`.
+  Any objects can be used as a `key` or as a `value`.
 
   To successfully store and retrieve objects from a hash table, the objects used
-  as keys must implement the `hashCode` method and the `equals` method.
-  
-  **This class is now considered obsolete. It iherits from the [Dictionary class](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Dictionary.html) which has been labeled obsolete for some time.**
-  [`ConcurrentHashMap](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html) should be used instead. 
+  as keys must implement (override) the `hashCode` method and the `equals` method.
+
 ]
 --
 
 .right-column2[
-__`HashMap<K,V>`__ class
+__`TreeMap<K,V>`__ class
 
-- https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashMap.html
+- <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/TreeMap.html" target="_blank">documentation</a>
 
-- `class Hashtable<K,V> implements Map<K,V>`
+- `class TreeMap<K,V> implements Map<K,V>`
 
-  This class implements a hash table, which maps keys to values.
-
-  __The `HashMap` class is roughly equivalent to `Hashtable`, except that it is unsynchronized and permits nulls.__
-
-  To successfully store and retrieve objects from a hash table,
-  the objects used as keys must implement the `hashCode` method and the `equals` method.
+A Red-Black tree based implementation. The map is sorted according to the natural ordering of its keys, or by a Comparator provided at map creation time, depending on which constructor is used.
+This implementation provides guaranteed log(n) time cost for the containsKey, get, put and remove operations.
 ]
 
 ---

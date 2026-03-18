@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Searching and Sorting</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+
+    <link href="css/slides.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+
+class: center, middle, title-slide
+
+# CSCI-UA 102
+## Data Structures
+
+<br>
+
+## Searching and Sorting
+
+.author[
+Instructor: Joanna Klukowska <br><br><br>
+]
+
+.license[
+Copyright 2020 Joanna Klukowska. Unless noted otherwise all content is released under  a <br>
+[Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
+Background image by Stewart Weiss<br>]
+
+---
+layout:true
+template: default
+name: section
+class: inverse, middle, center
+
+---
+layout:true
+template: default
+name: breakout
+class: breakout, middle
+
+---
+
+layout:true
+template:default
+name:slide
+class: slide
+
+.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+
+---
+
+template: section
+
+# Searching
+
+---
+
+## Searching in Unorganized Array
+
+When we do not know anything about organization of the data in an array, it is
+hard to predict where we should start the search in order to find the elements
+as fast as possible.
+__Moreover, if the element is not in the array, we cannot decide that until
+we check every single potential location.__
+
+--
+
+The algorithm that sequentially checks every location in the array is called __linear search__:
+it starts at the beginning of the array and proceeds through to the array one element at a time
+until either it finds what we are looking for, or reaches the end of the array.
+
+---
+
+
+## Linear Search - source code
+
+Here is the Java source code for linear search algorithm in an array of type `int`:
+
+``` Java
+int linearSearch(int[] A, int key) {
+  for (int i=0; i < A.length; i++)
+    if (A[i] == key)          // if we found it return this position
+       return i;
+  return -1;                // otherwise, return -1
+}
+```
+
+The search in an array of type `double` would look practically identical, except
+for the names of the types in the signature of the above method.
+
+---
+
+
+
+## Linear Search - source code
+
+If we are searching for an element in an unsorted array of objects
+(not primitive type variables), then we can no longer use `==` operator for
+comparing elements.
+Instead, the use of  `equals()` method is required.
+
+Note: unless the class overrides the `equals()` method defined in the `Object` class,
+the inherited method does exactly the same comparison as `==` would.
+
+--
+
+``` Java
+int linearSearch(Point[] points, Point p) {
+    if ( p == null )
+        return -1;
+    for (int i=0; i < points.length; i++)
+        if ( p.equals(points[i]) )          // if we found it return this position
+          return i;
+    return -1;                // otherwise, return -1
+}
+```
+
+---
+
+## Binary Search
+
+
+If we know that the array is sorted, we can take advantage of it in the search
+for an element. There is a particular location where  any item is expected to be.
+If it is not there, then it cannot be anywhere else. Having a sorted array,
+allows us to find the item much faster if it is located in the array, and to quickly
+declare that it is not there, if that's the case.
+(Well, assuming that we use an algorithm that takes advantage of that fact.)
+
+You most likely have seen an algorithm called __binary search__.
+At each step it eliminates half of the remaining items in the array
+(unlike linear search which eliminated a single item in each step).
+
+The general outline of the binary search algorithm follows. Assume that `key` is
+the element that we are searching for.
+
+.center80[
+1. If the array is not empty, pick an element in the middle of the current array. Otherwise, go to step 5.
+1. If that element is smaller than the `key`, discard all elements in the left
+half of the array and go back to step 1.
+1. If that element is greater than the `key`, discard all elements in the right
+half of the array and go back to step 1.
+1. If that element is equal to the `key`, return its index.
+1. If the array is empty, the `key` is not there.
+]
+
+---
+
+## Iterative Binary Search
+
+The following code provides iterative solution to the binary search algorithm.
+It is designed for the `Point` class.
+
+
+```java
+int binSearchIterative( Point[] points, Point p) {
+    int left = 0;
+    int right = points.length - 1;
+    int mid;
+
+    while ( left <= right ) { //array is not empty
+        mid = (left+right) / 2;
+        if (0 > points[mid].compareTo(p) )       //mid element is smaller than p
+          left = mid+1;                          //discard left half
+        else if ( 0 < points[mid].compareTo(p) ) //mid element is larger than p
+          right = mid-1;                         //discard right half
+        else
+          return mid;                            //found it, return the index
+        }
+
+    return -1;          //did not find it, return -1
+}
+```
+<br>
+
+Note: this code does not have any error handling regarding the arguments.
+
+---
+
+
+## Recursive Binary Search
+
+Here is a recursive implementation of the same algorithm.
+
+.smaller[
+```java
+int binSearchRecursive( Point[] points, Point p, int left, int right) {
+
+    if (left > right )  // no array left
+        return -1;
+
+    int mid = (left + right ) / 2;
+    int compare = p.compareTo(points[mid]);
+
+    if ( compare < 0 )  {       // mid element is larger than p
+        right = mid - 1;
+        return binSearchRecursive ( points, p, left, right);
+    }
+    else if (compare > 0 ) {    // mid element is smaller than p
+        left = mid + 1;
+        return binSearchRecursive ( points, p, left, right);
+    }
+    else {                      // mid is the
+        return mid;
+    }
+}
+```
+]
+
+--
+
+Since the recursive calls need to be started with extra information about the `left` and `right` indexes,
+we need a wrapper method that will setup the recursion:
+
+.smaller[
+```java
+int binSearchRecursive( Point[] points, Point p) {
+    if (points == null ) throw new NoSuchElementException("array is null");
+    if (p == null) return -1;
+    int left = 0;
+    int right = points.length - 1;
+    int mid;
+    return binSearchRecursive( points, p, left, right);
+}
+```
+]
+---
+
+## Performance of Search Algorithms
+
+If the array has `N` items how many locations will be accessed by  linear search and binary search?
+
+.center80[
+
+|  | linear search | binary search |
+|:---|:---:|:---:|
+|best case | 1 | 1 |
+|worst case | N | log N |
+|average case| <= N | <= logN |
+
+]
+
+--
+
+As before, we are going to describe the performance using the Big-O notation so
+that we do not need to worry about the actual constants.
+
+.center80[
+
+|  | linear search | binary search |
+|:---|:---:|:---:|
+|best case | O(1) | O(1) |
+|worst case | O(N) | O(log N) |
+|average case| O(N) | O(log N) |
+]
+
+---
+
+template: section
+
+# Sorting
+## Using Quadratic (or Slow) Algorithms
+
+---
+
+## Quadratic Sorts
+
+
+In the previous course you should have seen at least one sorting algorithm. We will quickly
+review three most popular quadratic sorts, and then move on to more efficient sort techniques.
+
+--
+
+----
+
+
+What are some of the sort algorithms that were covered in previous classes?
+
+--
+
+- bubble sort
+- selection sort
+- insertion sort
+
+---
+
+## Bubble Sort
+
+__Bubble sort__ is one of the first algorithms for sorting that people come up with.
+
+If we want to sort the array from smallest to largest, we can simply go through it,
+look at the elements pairwise and if the first in
+the pair is smaller than the second one, swap them. We may need to repeat the passes
+through the array up to
+`n` times (assuming there are `n` elements in the array) before the whole array is in sorted order.
+
+--
+
+The following code implements bubble sort for an array of type `double`.
+
+```java
+  void bubbleSort(double[] list) {
+    double tmp;
+    for (int i = 0; i < (list.length - 1); i++) {
+      for (int j = 0; j < list.length - i - 1; j++) {
+        //for each pair of elements, swap them, if they are out of order
+        if (list[j] > list[j + 1])
+        {
+          tmp = list[j];
+          list[j] = list[j + 1];
+          list[j + 1] = tmp;
+        }
+      }
+    }
+  }
+```
+
+
+Bubble sort happens to be the slowest of the sorting algorithms discussed here. It is hardly ever used in practice.
+
+---
+
+## Selection Sort
+
+__Selection sort__ is a sorting algorithm that
+starts by finding the smallest item on the list and then swaps it with the first element of the list.
+Then it finds the smallest element in the remaining list (ignoring the first one) and swaps it with the
+second element on the list. It continues until the remaining unsorted part of the list is empty.
+
+--
+
+The following code implements Selection Sort for an array of type `double`.
+
+```java
+public static void selectionSort(double[] list) {
+
+  for (int i = 0; i < list.length - 1; i++) {
+    // find the minimum in the list[i...list.length-1]
+    double currentMin = list[i];
+    int currentMinIndex = i;
+    for (int j = i + 1; j < list.length; j++) {
+      if (currentMin > list[j]) {
+        currentMin = list[j];
+        currentMinIndex = j;
+      }
+    }
+    // swap list[i] with list[currentMinIndex] if necessary;
+    if (currentMinIndex != i) {
+      list[currentMinIndex] = list[i];
+      list[i] = currentMin;
+    }
+  }
+}
+```
+---
+
+## Insertion Sort
+
+__Insertion sort__ algorithm
+divides the array (just in theory) into a sorted part and unsorted part. Initially, the
+sorted part consists only of the first item in the array (well, if we have only one thing,
+it has to be in a sorted order). The unsorted part starts as all the remaining elements.
+The algorithm works by repeatedly picking the first item from the unsorted part and inserting
+it into the sorted part. Once the unsorted part is empty, the entire array is sorted.
+
+--
+
+The following code implements Insertion Sort for an array of type `double`.
+
+```java
+public static void insertionSort(double[] list) {
+  for (int i = 1; i < list.length; i++) {
+    // insert list[i] into a sorted sublist list[0..i-1] so that
+    // list[0..i] is sorted
+    double currentElement = list[i];
+    int k;
+    for (k = i - 1; k >= 0 && list[k] > currentElement; k--) {
+      list[k + 1] = list[k];
+    }
+
+    // insert the current element into list[k+1]
+    list[k + 1] = currentElement;
+  }
+}
+```
+
+---
+## Performance of Quadratic Sorts
+
+
+<br><br>
+How many operations does it take to sort an array using one of the methods in this section?
+
+--
+<br><br>
+
+The title of this section ("Quadratic Sorts") really gives it away. But how can we tell that the
+performance (on average and in the worst case) is $O(n^2)$?
+
+--
+
+- Each of those methods
+has two nested for loops. At least one of those for loops repeats  `n` or `n-1` times.
+
+- The inner for loops repeat fewer than `n` times, but on average around `n/2` times.
+
+- This gives us
+number of operations that is proportional to $O(n^2)$, hence the name of this section.
+
+
+---
+
+template: section
+
+# Sorting
+## with MergeSort, `$O(n\log_2 n)$`, Algorithm
+
+---
+
+
+## Merge Sort
+
+The merge sort algorithm is based on a very simple observation:
+
+-  If we have `n` elements in the array, it takes approximately $n^{2}$ operations
+to sort that array using the algorithms that we know so far.
+
+--
+
+-  If we divide the original array into two halves and then sort the two halves separately,
+it takes approximately $2\times\left(\dfrac{n}{2}\right)^{2}$ or $\dfrac{n^{2}}{2}$ operations
+to sort each half. Merging two halves can be done in time proportional to `n`. The whole process
+ends with fewer operations than sorting the whole array.
+
+--
+
+It turns out that if we keep subdividing the array into smaller and smaller parts, we can complete
+the sorting in time proportional to $n log_2 n$ , or $O(n \log_2 n )$ -
+this is much faster than $O ( n^2 )$.
+
+--
+<br>
+
+The __algorithm for merge sort__ is as follows:
+-  split the array in half
+-  sort the left half
+-  sort the right half
+-  merge two sorted half-arrays into a single sorted array
+
+--
+
+What do you think will be used for the second and third steps?
+
+---
+
+## Merge Sort <br>is a Divide-and-Conquer Algorithm
+
+
+The merge sort algorithm is a __divide-and-conquer algorithm__. It takes a large problem and subdivides
+it into smaller problems. If they are not small enough for immediate solution, it subdivides the smaller
+problems into even smaller problems, etc.
+
+---
+
+## Merging Two Sorted Arrays
+
+It turns out that the "most complicated" part of the implementation is in the merging of two sub-arrays.
+They should be approximately the same size, but may be off by 1 or so.
+
+--
+
+.small[.red[The first version of the code that we write will need some revisions, but for now, let's just assume
+that we are writing a method that takes two sorted arrays and returns another array that contains all
+the elements of the two parameter arrays in sorted order.]]
+
+--
+
+```
+  merge ( array1, array2 )
+    create arrayMerged whose size equals (size of array1 + size of array2)
+    set index1 to zero (first index in array1)
+    set index2 to zero (first index in array2)
+    set indexMerged to zero
+    while index1 < size of array1   AND  index2 < size of array2
+      if array1[index1] < array2[index2]
+        set arrayMerged[indexMerged] to array1[index1]
+        increment index1
+      else
+        set arrayMerged[indexMerged] to array2[index2]
+        increment index2
+      increment indexMerged
+    copy remaining elements from array1 to arrayMerged
+    copy remaining elements from array2 to arrayMerged
+    return arrayMerged
+```
+
+--
+
+<br/>
+This merges two arrays into a single large array. It does not modify the original
+arrays and allocates new space for the merged array. For the purpose of merge step
+used in merge sort, we want to avoid using new memory to store and return the merged
+array. We do not need the original arrays once we merge them, so it would be nice to be
+able to reuse all that space.
+
+---
+
+## Merging Two Sorted Arrays
+
+The version of merge method that we use in the merge sort __does not__ actually take
+two separate arrays as parameters.
+
+
+
+It operates on a single array and the __two sorted
+parts__ are just specific ranges of indexes in that array.
+
+```
+              -----------------------------------------
+      index   | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+              -----------------------------------------
+      value   | 2 | 4 | 6 | 8 |10 | 1 | 3 | 5 | 7 | 9 |
+              -----------------------------------------
+```
+
+--
+
+In the above array,
+indexes 0 - 4 contain _one sorted array_ and the indexes 5 - 9 contain _another sorted array_.
+
+
+```
+          ---------------------   ---------------------
+   index  | 0 | 1 | 2 | 3 | 4 |   | 5 | 6 | 7 | 8 | 9 |
+          ---------------------   --------------------
+   value  | 2 | 4 | 6 | 8 |10 |   | 1 | 3 | 5 | 7 | 9 |
+          ---------------------   ---------------------
+```
+--
+
+We would like to merge these two sub-arrays so that all the data stays in the same array.
+
+
+
+---
+
+## Merging Two Sorted Arrays
+
+Here is the pseudocode that does it.
+
+It assumes that the two ranges
+- `[leftFirst, leftLast]`, and
+- `[rightFirst, rightLast]`
+are adjacent and sorted.
+
+--
+
+```
+merge ( array, leftFirst, leftLast, rightFirst, rightLast )
+  create tmp array whose size equals (rightLast - leftFirst + 1 )
+  set indexLeft to leftFirst
+  set indexRight to rightFirst
+  set index to zero
+  while indexLeft <= leftLast   AND  indexRight <= rightLast
+    if array[indexLeft] < array[indexRight]
+      set tmp[index] to array[indexLeft]
+      increment indexLeft
+    else
+      set tmp[index] to array[indexRight]
+      increment indexRight
+    increment index
+  copy elements in range indexLeft-leftLast to tmp
+  copy elements in range indexRight-rightLast to tmp
+  copy tmp to array starting at leftFirst
+```
+
+--
+
+<br/>
+We used `tmp` array to store the sorted array, but once the method terminates the array is no
+longer referenced and will be removed by Java garbage collector (or some other memory management system).
+
+
+---
+
+## Splitting the Array in Half
+
+
+The __algorithm for merge sort__:
+-  split the array in half
+-  sort the left half
+-  sort the right half
+-  merge two sorted half-arrays into a single sorted array
+
+--
+
+The second version of merge method operates on a single array to save space. This suggests that
+when we are "splitting" the array, we should not really create duplicate arrays in memory, but
+rather decide what the ranges of each half-array should be.
+
+---
+
+## Recursion in Merge Sort
+
+
+
+The __algorithm for merge sort__:
+-  split the array in half
+-  sort the left half
+-  sort the right half
+-  merge two sorted half-arrays into a single sorted array
+
+--
+
+So far we discussed the steps 4 and 1 from the merge sort algorithm.
+
+Steps 2 and 3 are recursively
+calling the merge sort on smaller sub-arrays. This guarantees that the recursion will eventually end,
+but when?
+
+--
+
+What should be the base case for the recursion?
+
+- Once the sub-arrays on which recursive call
+is made have only one element remaining, there is nothing to split and sort recursively.
+- This gives
+the base case for recursive calls: we keep splitting the array into smaller and smaller pieces until
+we cannot split any more.
+
+
+---
+
+## Merge Sort Pseudocode
+
+The final step is to specify pseudocode for merge sort based on the algorithm mentioned before.
+We want to take into account all the details discussed in the previous slides. As with many
+recursive problems we will make use of a helper method that calls a recursive method.
+
+--
+
+Pseudocode for merge sort:
+
+```
+mergeSort( array )
+  mergeSortRec (array, 0, array.length-1)
+```
+
+--
+<br/>
+
+```
+mergeSortRec ( array, firstIndex, lastIndex )
+  //base case
+  if (firstIndex >= lastIndex)
+    return
+  //split the array
+  mid = (firstIndex+lastIndex)/2
+  mergeSortRec(array, firstIndex, mid)
+  mergeSortRec(array, mid+1, lastIndex)
+  merge( array, firstIndex, mid, mid+1, lastInd)
+```
+
+
+---
+
+## Merge Sort Visualization
+
+OpenDSA website has a very good visualization of step by step application of the merge sort
+algorithm to a numerical array. You can find it at
+[https://opendsa-server.cs.vt.edu/OpenDSA/Books/Everything/html/Mergesort.html](https://opendsa-server.cs.vt.edu/OpenDSA/Books/Everything/html/Mergesort.html).
+
+
+---
+
+## Merge Sort Performance
+
+The actual work in mergesort algorithm is done by merge method. The merge method itself
+takes time proportional to the number of elements in the two sub-arrays that it is merging.
+
+--
+
+When we split the original array of `n` elements into two sub-arrays and then need to merge
+the sorted sub-arrays, the merge takes time proportional to `n`, or in Big-O notation $O(n)$.
+
+--
+
+How about all the smaller parts?
+
+--
+
+Each of the recursive calls (that is applied to the first half and the second half of the
+original array) merges sub-arrays of total length approximately $\frac{n}{2}$ and since
+there are $2$ such calls, the time it takes is proportional to $2\times\frac{n}{2}$ or `n`.
+
+--
+
+One level deeper, we have four recursive calls. Each of them merges sub-arrays of total length
+of approximately $\frac{n}{4}$, so the time it takes is proportional to $4\times\frac{n}{4}$ or `n`.
+
+--
+
+Do you see the pattern?
+
+--
+
+Now, the question is how many times will this process repeat?
+- How many times can we divide `n`
+elements in half, and then divide each of those halves in half, etc, before we end up with one
+element "halves"? The answer to that is $\log_{2}n$.
+
+--
+
+__At each level of recursion we perform $O(n)$ operations. There are `$\log_{2}n$`
+levels of recursion. The entire merge sort takes `$O(n\log_{2}n)$` steps.__
+
+--
+
+__This is the best,
+average and worst case time performance of merge sort.__
+
+---
+
+
+template: section
+
+# Sorting
+## with Quick Sort, `$O(n\log_2 n)$`, Algorithm
+
+---
+
+## Quick Sort
+
+Quick sort is another algorithm that uses the __divide-and-conquer approach__.
+- But the way
+in which the array is divided is different.
+- The dividing step of quick sort ends up
+performing more operations than the one of merge sort, but it allows us to skip the
+merging step at the end.
+
+--
+
+The idea behind the quick sort is the following.
+- Pick a value, called __pivot__,
+from the array and
+
+--
+
+- __partition__ the array by moving all the values smaller than
+the pivot to the left and all the values larger than the pivot to the right.
+
+--
+
+- Then place
+the pivot between the two parts. In the ideal situation, we pick the pivot to be as close
+to the median of all the values in the array as possible.
+
+--
+
+- Once we have the two parts, we use quick sort again to sort the two parts.
+<br>__Notice that after the partitioning step, the pivot
+is in its final location.__
+
+---
+
+
+## Quick Sort
+
+The __algorithm for quick sort__ is as follows:
+
+-  pick a pivot
+-  partition the array into two parts:
+
+  -  left - containing all values less than the pivot
+  -  right - containing all values grater than the pivot
+
+-  apply quick sort to the left part
+-  apply quick sort to the right part
+
+---
+
+## Picking a Pivot
+
+Selecting a good pivot is necessary for guaranteeing a good performance. Imagine
+that we always pick the smallest or the largest element to be the pivot.
+In this scenario we end up with one of the parts containing all but one element
+from the original array and the other part empty. You may guess that this is not
+very desirable.
+
+--
+
+Picking the pivot also has to be quick.
+
+--
+
+There are several ways pivots are picked. All of them have their advantages and
+disadvantages. Here are just a few ideas of how we can select a pivot.
+
+-  always pick the first element from the given array (or sub-array)
+-  pick a middle element in the array
+-  pick a random element from the array
+-  select three elements from the array and use their median as the pivot; the three elements could be
+  -  first three elements in the array
+  -  first, middle and last elements in the array
+  -  random three elements in the array
+
+---
+
+## Partitioning the Array
+
+Once we decide on the pivot, we need to partition the array into two parts.
+
+The goal is to do it using as few operations as possible.
+
+We do not care about
+the order of elements in each part, just so that
+- the left part has elements
+smaller than the pivot, and
+- the right part has elements larger than the pivot.
+
+--
+
+The following pseudocode is one way of performing partitioning. We want to partition
+the `array` given the beginning index `left` and the end index `right`, and the index of the `pivot`.
+
+```
+  //move the pivot to the rightmost position
+  swap array[right] and array[pivot]
+  set pivot to right
+  set right to right - 1
+  while left <= right
+  while array[left] < array[pivot]
+    left ++
+  while right >= left AND array[right] >= array[pivot]
+    right --
+  if right > left
+    swap array[left] with array[right]
+  //move the pivot to its final location
+  swap array[left] with array[pivot]
+  return left
+```
+
+---
+
+
+## Recursion in Quick Sort
+
+The recursive calls to quick sort continue as long as we have parts with more
+than one element. The complete pseudocode for the quick sort follows.
+
+```
+quickSort ( array )
+    quickSortRec( array, 0, array.size - 1 )
+```
+<br/>
+
+```
+quickSortRec (array, left, right)
+  pivotIndex = findpivot(array, left, right)  //use any method
+  newPivotIndex = partition ( array, left, right, pivotIndex )
+  if ( newPivotIndex - left > 1 )
+    quickSortRec( array, left, newPivotIndex - 1 )
+  if ( right - newPivotIndex > 1 )
+    quickSortRec( array, newPivotIndex + 1, right )
+
+```
+---
+
+## Quick Sort Visualization
+
+
+OpenDSA website has a very good visualization of step by step application of
+the quick sort algorithm to a numerical array. You can find it at
+[https://opendsa-server.cs.vt.edu/OpenDSA/Books/Everything/html/Quicksort.html](https://opendsa-server.cs.vt.edu/OpenDSA/Books/Everything/html/Quicksort.html).
+
+
+
+---
+
+
+## Quick Sort Performance
+
+If we could always pick a pivot so that the two parts are approximately equal,
+then the quick sort would perform `$O(n\log_{2}n)$` operations
+(best, worst and average case).
+
+--
+
+But in extreme cases when we always pick a bad pivot,
+the quick sort may deteriorate to `$O(n^{2})$` operations (worst case).
+
+
+
+
+
+
+
+
+
+---
+
+template:section
+
+# Examples and Things to Think About
+
+---
+
+## Recursive Selection Sort
+
+For the purpose of practicing your newly acquired expertise on recursion,
+rewrite the selection sort using recursion.
+
+In the first version, eliminate the outer loop and replace it with recursive calls.
+
+Can you think of how to replace the inner loop with recursion as well?
+
+---
+
+## Quadratic Sorts for Objects
+
+Rewrite all of the quadratic sort implementations so that they work
+for reference types. Your functions should be generic and should
+expect that the type used in place of `E` implements `Comparable<E>` interface.
+
+---
+
+## Closer Look at Mergesort
+
+Consider any array and the merge sort algorithm below:
+
+
+```
+        1  mergeSort( array )
+        2    mergeSortRec (array, 0, array.length-1)
+```
+</br>
+```
+        3  mergeSortRec ( array, firstIndex, lastIndex )
+        4    if (firstIndex >= lastIndex)
+        5      return
+        6    mid = (firstIndex+lastIndex)/2
+        7    mergeSortRec(array, firstIndex, mid)
+        8    mergeSortRec(array, mid+1, lastIndex)
+        9    merge( array, firstIndex, mid, mid+1, lastInd)
+```
+
+- What will the array look like after the recursive call on line 7 completes 
+(i.e., all of the recursive calls made by that call complete)? 
+- What will the array look like after the recursive call on line 8 completes 
+(i.e., all of the recursive calls made by that call complete)? 
+- What is the largest number of stack frames for the `mergeSortRec` function 
+that are concurrently on the stack at any point while the algorithm is applied 
+to the array?
+- What is the total number of stack frames for `mergeSortRec` function that are 
+created while the algorithm is running?
+- What would happen if the third argument passed to `mergeSortRec` on line 
+2 was `array.length`? 
+- What would happen if the second argument passed to `mergeSortRec` on line 8
+was `mid`?
+- What would happen if the third argument passed to `mergeSortRec` on line 7
+was `mid-1`?
+
+---
+
+## Closer Look at Quicksort
+
+
+Consider any array and the quick sort algorithm below.
+
+```
+    1  quickSort ( array )
+    2    quickSortRec( array, 0, array.size - 1 )
+```
+<br/>
+
+```
+    3  quickSortRec (array, left, right)
+    4    pivotIndex = findpivot(array, left, right)  //use any method
+    5    newPivotIndex = partition ( array, left, right, pivotIndex )
+    6    if ( newPivotIndex - left > 1 )
+    7      quickSortRec( array, left, newPivotIndex - 1 )
+    8    if ( right - newPivotIndex > 1 )
+    9      quickSortRec( array, newPivotIndex + 1, right )
+```
+
+Assume that the `findpivot` function computes `pivotIndex` as 
+`(left+right)/2`. </br>
+Assume that the `partition` function returns the index at which the pivot
+is located after partitioning.
+
+- What will the array look like after the very first call to `partition` on
+line 5 is completed?
+- What will the array look like after the second ever call to `partition` on line 5 is 
+completed?
+- What will the array look like after the recursive call
+to `quickSortRec` on line 7 is completed (i.e., all of the recursive calls 
+within it complete)? 
+- Would the results of sorting change if we exchanged the if statements 
+(including the bodies) on lines 6 and 8?
+- What would happen if we removed the if statement checks on lines 6 and 8 and just 
+kept the recursive calls?
+
+---
+
+## Bubble Sort
+
+Design the code that implements the bubble sort on a linked list. 
+
+
+ 
+
+
+
+    </textarea>
+
+
+
+     <script src="js/remark.js" type="text/javascript">
+    </script>
+    <script src="js/remark_conf.js" type="text/javascript">
+    </script>
+
+
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
+    <script type="text/javascript">
+      //var slideshow = remark.create();
+
+      // Setup MathJax
+      MathJax.Hub.Config({
+          tex2jax: {
+          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+            processEscapes: true
+          }
+      });
+
+      MathJax.Hub.Configured();
+    </script>
+
+
+
+  </body>
+</html>
