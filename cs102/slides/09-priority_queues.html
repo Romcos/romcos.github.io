@@ -19,7 +19,7 @@ class: center, middle, title-slide
 ## Priority Queues
 
 .author[
-Instructor: Joanna Klukowska <br><br><br>
+Instructor: Romain Cosson <br><br><br>
 ]
 
 .license[
@@ -46,7 +46,7 @@ template:default
 name:slide
 class: slide
 
-.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+.bottom-left[&#169; J. Klukowska. (mod. RC) CC-BY-SA.]
 
 ---
 
@@ -93,26 +93,105 @@ template: section
 ## Priority Queue Interface
 
 - The interface for a priority queue is much like the one we had for a queue,
-but _where the elements go_ changes.
+but _order of elements_ changes.
 
 --
 
-  - `enqueue( element )` adds the `element` to this queue
+  - `public void enqueue( E element )` adds the `element` to this queue
 
-  - `dequeue()`  removes and returns the element with highest priority
+  - `public E dequeue()`  removes and returns the element **with highest priority**
 
-  - `front()`  returns (but does not remove) the element with the highest priority
-
---
-
-<br/><br/>
-
-- Priorities are usually represented by numbers
+  - `public E front()`  returns (but does not remove) the element **with the highest priority**
 
 --
 
-  - _highest priority_ could be indicated by largest number or by smallest number
-(this often depends on the application and conventions used)
+- Priorities are usually represented by an ordering or elements of `T`
+
+--
+
+  - Either `T` has a natural ordering (e.g., it implements `Comparable<T>` in Java) 
+  - Or `T` has a field `K` (called key) that represents the priority (e.g., an `Integer`)
+  - or a `Comparator<T>` is provided to the constructor of the priority queue.
+
+--
+
+- Priorities could also be explicitly provided as part of the method calls, e.g., 
+  - `enqueue( element, priority )`
+
+--
+
+- _Note:_ _highest priority_ could be indicated by largest number or by smallest number
+
+--
+
+- _Note:_ The specific names of the methods may differ, e.g.,
+  - `public void add( E element )` 
+
+---
+
+## Priority Queue Interface
+
+- An interface where a `Comparator<T>` will later be provided to the constructor (default in Java).
+
+```java
+public interface PriorityQueue<T> {
+    void add(T item);
+    T peek();
+    T remove();
+    boolean isEmpty();
+    int size();
+}
+```
+
+--
+
+- An interface where priorities are explicitly provided as part of the method calls.
+
+```java
+public interface PriorityQueue<K extends Comparable<? super K>, V> {
+    interface Entry<K, V> {
+        K getKey();
+        V getValue();
+    }
+
+    int size();
+    boolean isEmpty();
+    Entry<K, V> insert(K key, V value);
+    Entry<K, V> min();
+    Entry<K, V> removeMin();
+}
+```
+
+
+---
+
+## Example
+
+- What is the output of the following program (assuming a min queue, i.e., max priority =0)? 
+
+- https://pollev.com/cosson (code is also available in the file `pq-example.java` in the course repository)
+
+```java
+
+PriorityQueue<Integer, String> pq = new BinaryHeap<>();
+
+pq.insert(4, "Maya");
+pq.insert(2, "Leo");
+pq.insert(5, "Nina");
+
+System.out.println(pq.min());
+
+pq.insert(1, "Omar");
+System.out.println(pq.removeMin());
+
+pq.insert(3, "Eva");
+System.out.println(pq.removeMin());
+
+pq.insert(0, "Iris");
+System.out.println(pq.min());
+
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin());```
 
 
 ---
@@ -120,22 +199,19 @@ but _where the elements go_ changes.
 name: pq-ideas
 template: slide
 
-## How Can PQ Be Implemented
+## How Can PQ Be Implemented?
 
-Throughout the semester, we discussed several different structures that can be
-used for implementation of a priority queue. Below we review different options.
+Below we review different (sipmple but inefficient) options.
 
 --
 
 - __unsorted array__
 --
 
-  - `enqueue()` - operation can be implemented by adding to the end (assuming we leave
-  empty locations at the end of the array), so it is amortized time O(1)
+  - `enqueue()` - operation can be implemented by adding to the end: Amortized time O(1) (resizeable array)
 --
 
-  - `dequeue` - operation needs to find an item with the highest priority, so it
-  requires a linear search, O(N)
+  - `dequeue()` - operation needs to find an item with the highest priority, so it requires a linear search, O(N)
 
 --
 
@@ -147,7 +223,7 @@ used for implementation of a priority queue. Below we review different options.
   in the array need to be shifted to accommodate the new element - this makes it O(N)
 --
 
-  - `dequeue` - operation needs to remove the item with highest
+  - `dequeue()` - operation needs to remove the item with highest
   priority which is at the front of the list which requires only constant time O(1), unless
   we need to shift remaining elements, in which case it is O(N)
 
@@ -163,34 +239,33 @@ template: pq-ideas
 - __sorted linked list__
 --
 
-  - `enqueue()` - operation can use linear search to find the correct location for the new element
+  - `enqueue()` - must use linear search to find the correct location for the new element O(N)
 --
 
-  - `dequeue` - operation needs to remove the item with highest
+  - `dequeue()` - operation needs to remove the item with highest
   priority which is at the front of the list which requires only constant time O(1)
 
 --
 
-- __balanced binary search tree (sorted by priorities__
+- __Binary search tree (sorted by priorities)__
 --
 
-  - `enqueue()` - operation can use standard addition to a balanced BST, this is O(logN)
+  - `enqueue()` - operation can use standard addition to a balanced BST, this is O(D)
 --
 
-  - `dequeue` - operation needs to locate and remove the _smallest_ or _largest_ element, this is O(logN)
+  - `dequeue()` - operation needs to locate and remove the _smallest_ or _largest_ element, this is O(D)
 
 --
 
 Objectives
 
-  - we want enqueue and dequeue operations to take approximately the same time
+  - we want enqueue and dequeue operations to take approximately the same time (fast)
 
-  - we want the time for these operations to be as small as possible
+  - as fast as possible
 
 --
 
-The balanced binary search tree seems like a good choice, but do we need the total ordering of the elements
-that comes with it?
+The binary search tree seems like a good choice, but can we be more efficient? Can we do O(log N) for both operations?
 
 ---
 
@@ -269,6 +344,23 @@ The difference between a max-heap and a min-heap comes in their order property.
 <img width="600px" alt="min-heap" src="img/13/pq-5.jpg">
 
 ]
+---
+
+## Your turn
+
+- Draw a binary max tree and a binary min tree that could be associated to the following entries: 
+
+```java
+pq.insert(4, "Maya");
+pq.insert(2, "Leo");
+pq.insert(5, "Nina");
+pq.insert(1, "Omar");
+pq.insert(3, "Eva");
+pq.insert(0, "Iris");
+```
+
+- Note: In a binary tree with the shape property, we always have that D = O(log N)
+
 ---
 
 ## Adding to a Binary Max-Heap
@@ -449,6 +541,23 @@ template: pq-add
 
 ---
 
+## Your turn
+
+- Draw the binary max tree / binary min tree that would be associated to the following entries (ignore the names now, just keep the values): 
+
+```java
+pq.insert(4, "Maya");
+pq.insert(2, "Leo");
+pq.insert(5, "Nina");
+pq.insert(1, "Omar");
+pq.insert(3, "Eva");
+pq.insert(0, "Iris");
+```
+
+
+
+---
+
 ## Removing from a Binary Max-Heap
 
 - The remove operation is proportional to the height of the tree as well. Since the tree is a complete
@@ -566,6 +675,28 @@ template: pq-remove
 <img width="700px" alt="min-heap" src="img/13/pq-remove-37.jpg">
 
 ]
+
+---
+
+## Your turn
+
+- Draw the binary max tree / binary min tree at each point of the following code:
+
+```java
+pq.insert(4, "Maya");
+pq.insert(2, "Leo");
+pq.insert(5, "Nina");
+pq.insert(1, "Omar");
+pq.insert(3, "Eva");
+pq.insert(0, "Iris");
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin());
+System.out.println(pq.removeMin()); 
+```
+
 
 ---
 template: section
