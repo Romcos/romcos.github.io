@@ -514,6 +514,45 @@ levels of recursion. The entire merge sort takes `$O(n\log_{2}n)$` steps.__
 __This is the best,
 average and worst case time performance of merge sort.__
 
+
+---
+
+## Closer Look at Mergesort
+
+Consider any array and the merge sort algorithm below:
+
+
+```
+        1  mergeSort( array )
+        2    mergeSortRec (array, 0, array.length-1)
+```
+</br>
+```
+        3  mergeSortRec ( array, firstIndex, lastIndex )
+        4    if (firstIndex >= lastIndex)
+        5      return
+        6    mid = (firstIndex+lastIndex)/2
+        7    mergeSortRec(array, firstIndex, mid)
+        8    mergeSortRec(array, mid+1, lastIndex)
+        9    merge( array, firstIndex, mid, mid+1, lastInd)
+```
+
+- What will the array look like after the recursive call on line 7 completes 
+(i.e., all of the recursive calls made by that call complete)? 
+- What will the array look like after the recursive call on line 8 completes 
+(i.e., all of the recursive calls made by that call complete)? 
+- What is the largest number of stack frames for the `mergeSortRec` function 
+that are concurrently on the stack at any point while the algorithm is applied 
+to the array?
+- What is the total number of stack frames for `mergeSortRec` function that are 
+created while the algorithm is running?
+- What would happen if the third argument passed to `mergeSortRec` on line 
+2 was `array.length`? 
+- What would happen if the second argument passed to `mergeSortRec` on line 8
+was `mid`?
+- What would happen if the third argument passed to `mergeSortRec` on line 7
+was `mid-1`?
+
 ---
 
 
@@ -716,44 +755,6 @@ Can you think of how to replace the inner loop with recursion as well?
 Rewrite all of the quadratic sort implementations so that they work
 for reference types. Your functions should be generic and should
 expect that the type used in place of `E` implements `Comparable<E>` interface.
-
----
-
-## Closer Look at Mergesort
-
-Consider any array and the merge sort algorithm below:
-
-
-```
-        1  mergeSort( array )
-        2    mergeSortRec (array, 0, array.length-1)
-```
-</br>
-```
-        3  mergeSortRec ( array, firstIndex, lastIndex )
-        4    if (firstIndex >= lastIndex)
-        5      return
-        6    mid = (firstIndex+lastIndex)/2
-        7    mergeSortRec(array, firstIndex, mid)
-        8    mergeSortRec(array, mid+1, lastIndex)
-        9    merge( array, firstIndex, mid, mid+1, lastInd)
-```
-
-- What will the array look like after the recursive call on line 7 completes 
-(i.e., all of the recursive calls made by that call complete)? 
-- What will the array look like after the recursive call on line 8 completes 
-(i.e., all of the recursive calls made by that call complete)? 
-- What is the largest number of stack frames for the `mergeSortRec` function 
-that are concurrently on the stack at any point while the algorithm is applied 
-to the array?
-- What is the total number of stack frames for `mergeSortRec` function that are 
-created while the algorithm is running?
-- What would happen if the third argument passed to `mergeSortRec` on line 
-2 was `array.length`? 
-- What would happen if the second argument passed to `mergeSortRec` on line 8
-was `mid`?
-- What would happen if the third argument passed to `mergeSortRec` on line 7
-was `mid-1`?
 
 ---
 
