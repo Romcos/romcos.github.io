@@ -726,11 +726,9 @@ name:pq-array
 
 ## Using Arrays to Implement Heaps
 
-.left-column2-smaller[.small[
-- We can populate an array with values stored in nodes of a complete binary tree
-by reading them off from the root one level at a time
-(this is breadth first search traversal of a tree).
-]]
+.left-column2-smaller[
+- We can populate an array by reading values from the tree from left to right and top to bottom (aka breadth first search traversal).
+]
 
 --
 .right-column2-larger[
@@ -746,13 +744,13 @@ name: pq-array2
 
 ]
 
-.left-column2-smaller[.small[
-- This gives us the following properties:
+.left-column2-smaller[
+- Thus:
   - the root of a tree is at index 0
   - if an element is not a root, its parent is at position $(index-1)/2$
-  - if an element has a left child, the child is at position $index\times2+1$
-  - if an element has a right child, the child is at position $index\times2+2$
-]]
+  - the left child is at position $index\times2+1$
+  - the right child is at position $index\times2+2$
+]
 
 --
 
@@ -777,13 +775,13 @@ name: pq-array2
 
 ]
 
-.left-column2-smaller[.small[
+.left-column2-smaller[
 - Alternatively, we can skip index zero and shift all the elements by 1 towards the end of the array:
   - the root of a tree is at index 1
   - if an element is not a root, its parent is at position $index/2$
   - if an element has a left child, the child is at position $index\times2$
   - if an element has a right child, the child is at position $index\times2+1$
-]]
+]
 
 --
 template:pq-array
@@ -791,25 +789,94 @@ template:pq-array
 <img width="450px" alt="min-heap" src="img/13/pq-array-8.jpg">
 
 ]
+---
+## Why use an array?
+
 --
 
-.below-column2[
-
-]
-.small[
-- This allows us to move from parent to child and child to parent very quickly
+This allows us to move from parent to child and child to parent very quickly
   (no need to worry about storing extra references) and the _last position at the lowest level_
   is always the last element in that array.
-]
+
+--
+
+```java
+
+public class BinaryHeap<T extends Comparable<T>> {
+    // final = no reassign (safety)
+    private final ArrayList<T> heap = new ArrayList<>(); 
+
+    //Default constructor
+    public BinaryHeap(){} 
+
+    public int size() { return heap.size(); }
+    
+    protected int parent(int j) { return (j - 1) / 2; }
+    protected int left(int j) { return 2 * j + 1; }
+    protected int right(int j) { return 2 * j + 2; }
+    protected boolean hasLeft(int j) { return left(j) < heap.size(); }
+    protected boolean hasRight(int j) { return right(j) < heap.size(); }
+
+    protected void swap(int i, int j) {
+        T t = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, t);
+    }
+  ...
+  }
+```
+
+---
+## Implementing insertion
+
+```java
+    protected void upheap(int j) {
+        while (j > 0) {
+            int p = parent(j);
+            if (compare(heap.get(j), heap.get(p)) >= 0) break;
+            swap(j, p);
+            j = p;
+        }
+    }
+
+    public void insert(T t) {
+        heap.add(t);
+        upheap(heap.size() - 1);
+    }
+```
+
+---
+## Implementing deletion
+
+```java
+    protected void downheap(int j) {
+        while (hasLeft(j)) {
+            int li = left(j);
+            int si = li; // the swapped index
+            if (hasRight(j)) {
+                int ri = right(j);
+                if (compare(heap.get(li), heap.get(ri)) > 0) si = ri;
+            }
+            if (compare(heap.get(si), heap.get(j)) >= 0) break;
+            swap(j, si);
+            j = si;
+        }
+    }
+
+    public T removeMin() {
+        if (heap.isEmpty()) return null;
+        T ans = heap.get(0);
+        swap(0, heap.size() - 1);
+        heap.remove(heap.size() - 1);
+        if (!heap.isEmpty()) downheap(0);
+        return ans;
+    }
+```
+
 ---
 template: section
 
 # Priority Queues using Heaps
----
-
-## Priority Queues using Heaps
-
-- Binary heaps are used for efficient implementation of priority queues.
 
 ---
 
@@ -832,13 +899,70 @@ template: section
 
 ---
 
-template: breakout
-
 ## Using binary heaps to sort
 
-Assume that you have data stored in a binary max-heap or a binary min-heap.
+Now that we have a binary heap implementation of a priority queue, we can use it to sort an array of values efficiently.
 
-Suggest an algorithm that uses the heap to produce a sorted collection.
+```java
+public static void heapSort(int[] arr) {
+    BinaryHeap<Integer> heap = new BinaryHeap<>();
+
+    for (int i = 0; i < arr.length; i++) {
+        heap.insert(arr[i]);
+    }
+
+    for (int i = 0; i < arr.length; i++) {
+        arr[i] = heap.removeMin();
+    }
+}
+```
+
+Questions: 
+1. What is the time complexity of this algorithm?
+2. Is it an in-place sorting algorithm? Why or why not?
+
+--
+
+- Can we improve the time complexity of this algorithm?
+
+---
+## Faster heap construction algorithm O(N)
+
+
+We will add a new constructor to our BinaryHeap class that takes an array of values and builds a heap out of it in O(N) time. 
+
+--
+
+```java
+// O(N) constructor using "heapify"
+    public BinaryHeap(T[] els) {
+        for (int i = 0; i < els.length; i++) { heap.add(els[i]); }     
+        heapify();
+    }
+    protected void heapify() {
+        for (int j = parent(heap.size() - 1); j >= 0; j--) {
+            downheap(j);
+        }
+    }
+```
+
+--
+Now quicksort can be implemented as 
+
+--
+```java
+public static void heapSort(Integer[] arr) {
+    BinaryHeap<Integer> heap = new BinaryHeap<>(arr);
+
+    for (int i = 0; i < arr.length; i++) {
+        arr[i] = heap.removeMin();
+    }
+}```
+
+--
+
+1. What is the time complexity of this algorithm?
+2. Is it an in-place sorting algorithm? Why or why not?
 
 ---
 
@@ -891,6 +1015,9 @@ values marked with ... are empty locations in the array representing the heap.]
   - the largest value in the min-heap?
 
   (assume that the root is stored at index 0).
+
+
+
 
 ---
 ## Finding Median
