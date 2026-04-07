@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Balanced BST</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-    <link href="css/slides.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
-    <textarea id="source">
+<head>
+  <title>Balanced BST</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+  <link href="css/slides.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <textarea id="source">
 
 class: center, middle, title-slide
 
@@ -19,11 +21,11 @@ class: center, middle, title-slide
 ## Balanced BST
 
 .author[
-Instructor: Joanna Klukowska <br><br><br>
+Instructor: Romain Cosson <br><br><br>
 ]
 
 .license[
-Copyright 2020 Joanna Klukowska. Unless noted otherwise all content is released under  a <br>
+Copyright 2020 J. Klukowska. (mod. R.C.) Unless noted otherwise all content is released under  a <br>
 [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).<br>
 Background image by Stewart Weiss<br>]
 
@@ -46,7 +48,7 @@ template:default
 name:slide
 class: slide
 
-.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+.bottom-left[&#169; J. Klukowska. (mod. R.C.) CC-BY-SA.]
 
 ---
 
@@ -219,6 +221,8 @@ node cannot differ by more than 1.
 ---
 template: check-avl
 
+*Is this tree an BST? Is it an AVL tree?*
+
 .left-column2-large[
 <img width="500px" alt="BST - balanced" src="img/12/tree-1.jpg">
 ]
@@ -255,13 +259,11 @@ __Questions__
 If we try __to calculate the height of a given node__ whenever that information
 is needed, we need to visit all its descendants. For example,
 
-```
+```java
   int getHeight ( Node node )
-
-    if node == null
-      return 0
-
-    return 1 + max ( getHeight(node.left), getHeight(node.right) )
+    if node == null:
+      return 0;
+    return 1 + max ( getHeight(node.left), getHeight(node.right) );
 
 ```
 --
@@ -279,7 +281,7 @@ itself__:
 <img width="150px" alt="AVL node" src="img/12/avl_node.jpg">
 
 
-```
+```java
 class AVLNode {
   T data ;
   int height;
@@ -290,8 +292,8 @@ class AVLNode {
 ]
 --
 .right-column2-large[
-```
-updateHeight ( AVLNode node )
+```java
+void updateHeight ( AVLNode node )
   if node is a leaf
     node.height = 0
   else if node.left == null
@@ -315,11 +317,9 @@ name: balance-factor
 
 ## Balance Factor
 
-In order to keep the tree balanced, we need to make adjustments when they become necessary.
-This is decided based on the height difference of the subtrees of a given node. The difference and its
-sign determine what needs to happen to the tree in order to restore its balance.
+The measure of whether the tree is sufficiently *balanced* is based on a quantity called the **balance factor** and defined at every node. The __balance factor__ at a **node v** is the difference between the heights of the left and right subtrees.
 
-The __balance factor__ is the difference between the heights of the left and right subtrees.
+.center[**BF(v) = height(v.right)-height(v.left)**]
 
 --
 
@@ -332,9 +332,10 @@ The __balance factor__ is the difference between the heights of the left and rig
 
 .left-column2-small[
 ```
-int balanceFactor ( AVLNode n )
+int balanceFactor ( 
+  AVLNode n )
   if ( n.right == null 
-             && n.left == null)
+        && n.left == null)
     return 0;  
   if ( n.right == null )
     return -node.height
@@ -348,10 +349,9 @@ int balanceFactor ( AVLNode n )
 --
 
 .left-column2-small[
-<br><br>
+<br>
 
-__The balance factor of a node should be -1, 0 or 1, otherwise, the node is
-unbalanced.__
+__ A BST is an AVL tree if the balance factor of all nodes is either -1, 0 or 1.__
 ]
 
 ---
@@ -367,7 +367,6 @@ template: balance-factor
 
 .left-column2-small[
 <br><br>
-Intuitively,
 - if the balance factor is -2, the left subtree is too deep,
 - if the balance factor is 2, the right subtree is too deep.
 
@@ -417,8 +416,23 @@ rotations can be performed to restore that balance:
 
 --
 
-<br><br>
-__All rotations perform only local structural changes. They are all O(1).__
+Useful terminology: 
+- node A is *right-imbalanced* **means** BF(A) = 2 
+- node A is *left-imbalanced* **means** BF(A) = -2
+- node A is *right-heavy* **means** BF(A) = 1 
+- node A is *left-heavy* **means** BF(A) = -1
+
+
+--
+
+Rotations:
+- Rotations are local transformations of a BST that preserve the BST properties. 
+- Rotations allow to restore balance, when a node is imbalanced.
+- The cost of one rotation is O(1).
+- There is only really one kind of rotation: 
+ - The RR rotation is the symmetric of the LL rotation
+ - the LR rotation is a (careful) composition of LL rotation and RR rotation
+ - the RL rotation is the symmetric of the LR rotation
 
 
 ---
@@ -428,6 +442,8 @@ name: ll-rotation
 
 The imbalance occurs at a node A (note that node A is not the root of the whole tree,
 it is just a node that is out of balance, there might be a huge tree above it):
+
+- **Case LL:** A is left-imbalanced (BF(A) is -2) **AND** its left child is not right-heavy (BF <1).
 
 --
 
@@ -441,15 +457,6 @@ template: ll-rotation
 
 .center[
 <img width="500px" alt="BST - balanced" src="img/12/rotation-39.jpg">
-]
-.center80[
-
-A's __left__ subtree has two more levels that its right subtree.
-
-
-In the left subtree of A (i.e. subtree rooted at B) either both subtrees of B have the same height,
-or the __left__ subtree of B has height one larger than the right subtree.
-
 ]
 
 
@@ -480,8 +487,7 @@ To restore the balance, we _pull B up_ and _push A down_.
 --
 .center80[
 This means that the T2 subtree needs to be shifted from the right subtree
-of B to the left subtree of A. (Note that this is possible since all
-the values in T2 are smaller than A and larger than B.)
+of B to the left subtree of A. (Note: the values in T2 are smaller than A and larger than B.)
 ]
 
 ---
@@ -502,7 +508,8 @@ The following pseudocode describes steps required to perform an LL rotation
 //root of the subtree after
 //the LL rotation has been performed
 
-AVLNode  balanceLL ( AVLNode A )
+AVLNode  balanceLL ( 
+  AVLNode A )
 
 	AVLNode B = A.left
 
@@ -526,6 +533,9 @@ name: rr-rotation
 The imbalance occurs at a node A (note that node A is not the root of the whole tree,
 it is just a node that is out of balance, there might be a huge tree above it).
 
+- **Case LL:** A is right-imbalanced (BF(A) is 2) **AND** its right child is not left-heavy (BF >-1).
+
+
 --
 
 .center[
@@ -533,10 +543,7 @@ it is just a node that is out of balance, there might be a huge tree above it).
 ]
 .center80[
 
-A's __right__ subtree has two more levels that its left subtree.
-
-
-In the left subtree of A (i.e. subtree rooted at B) either both subtrees of B have the same height,
+A's __right__ subtree has two more levels that its left subtree. In the left subtree of A (i.e. subtree rooted at B) either both subtrees of B have the same height,
 or the __right__ subtree of B has height one larger than the left subtree.
 
 ]
@@ -553,12 +560,7 @@ template: rr-rotation
 .center80[
 To restore the balance, we _pull B up_ and _push A down_.
 ]
---
-.center80[
-This means that the T2 subtree needs to be shifted from the left subtree
-of B to the right subtree of A. (Note that this is possible since all
-the values in T2 are larger than A and smaller than B.)
-]
+
 
 
 ---
@@ -588,6 +590,9 @@ name: lr-rotation
 The imbalance occurs at a node A (note that node A is not the root of the whole tree,
 it is just a node that is out of balance, there might be a huge tree above it):
 
+- **Case LR:** A is left-imbalanced (BF(A) is 2) **AND** its left child is rigt-heavy (BF = 1).
+
+
 --
 
 .center[
@@ -604,10 +609,7 @@ template: lr-rotation
 ]
 .center80[
 
-A's __left__ subtree has two more levels that its right subtree.
-
-
-In the left subtree of A (i.e. subtree rooted at B)
+A's __left__ subtree has two more levels that its right subtree. In the left subtree of A (i.e. subtree rooted at B)
 the __right__ subtree of B has height one larger than the left subtree.
 
 ]
@@ -674,7 +676,7 @@ The following pseudocode describes steps required to perform an LR rotation
 
 .left-column2-small[
 
-```
+```java
 //returns a reference to the new
 //root of the subtree after
 //the LR rotation has been performed
@@ -955,31 +957,34 @@ Assume that values 1...10 are added one by one to an initially empty AVL tree.
 
 
     </textarea>
-     <script src="js/remark.js" type="text/javascript">
-    </script>
-    <script src="js/remark_conf.js" type="text/javascript">
-    </script>
+  <script src="js/remark.js" type="text/javascript">
+  </script>
+  <script src="js/remark_conf.js" type="text/javascript">
+  </script>
 
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
-    <script type="text/javascript">
-      var slideshow = remark.create();
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+    type="text/javascript"></script>
+  <script type="text/javascript">
+    var slideshow = remark.create();
 
-      // Setup MathJax
-      MathJax.Hub.Config({
-          tex2jax: {
-          skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-            inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-            displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-            processEscapes: true
-          }
-      });
+    // Setup MathJax
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+        inlineMath: [['$', '$'], ["\\(", "\\)"]],
+        displayMath: [['$$', '$$'], ["\\[", "\\]"]],
+        processEscapes: true
+      }
+    });
 
-      MathJax.Hub.Configured();
-    </script>
+    MathJax.Hub.Configured();
+  </script>
 
 
 
-  </body>
+</body>
+
 </html>
