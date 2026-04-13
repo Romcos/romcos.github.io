@@ -533,7 +533,7 @@ name: rr-rotation
 The imbalance occurs at a node A (note that node A is not the root of the whole tree,
 it is just a node that is out of balance, there might be a huge tree above it).
 
-- **Case LL:** A is right-imbalanced (BF(A) is 2) **AND** its right child is not left-heavy (BF >-1).
+- **Case RR:** A is right-imbalanced (BF(A) is 2) **AND** its right child is not left-heavy (BF >-1).
 
 
 --
@@ -590,7 +590,7 @@ name: lr-rotation
 The imbalance occurs at a node A (note that node A is not the root of the whole tree,
 it is just a node that is out of balance, there might be a huge tree above it):
 
-- **Case LR:** A is left-imbalanced (BF(A) is 2) **AND** its left child is rigt-heavy (BF = 1).
+- **Case LR:** A is left-imbalanced (BF(A) is -2) **AND** its left child is rigt-heavy (BF = 1).
 
 
 --
@@ -623,11 +623,11 @@ template: lr-rotation
 <img width="500px" alt="BST - balanced" src="img/12/rotations-34.jpg">
 ]
 .center80[
-The balance factor of C is either -1, 0 or 1 => C is balanced.
-
-The balance factor of B is 1 =>  B is balanced.
-
-The balance factor of A is -2  => A is out of balance.
+.smaller[
+- The balance factor of C is either -1, 0 or 1 => C is balanced.
+- The balance factor of B is 1 =>  B is balanced.
+- The balance factor of A is -2  => A is out of balance.
+]
 ]
 
 
@@ -655,10 +655,10 @@ template: lr-rotation
 ]
 
 .center90[.smaller[
-This means that the T2 and T3 subtrees needs to be shifted:
-- T2 becomes the right subtree of node B (since all the values in T2 are larger
+- This means that the T2 and T3 subtrees needs to be shifted:
+  - T2 becomes the right subtree of node B (since all the values in T2 are larger
 than B and smaller than C)
-- T3 becomes the left subtree of node A (since all the values in T3 are
+  - T3 becomes the left subtree of node A (since all the values in T3 are
 smaller than A and larger than C)
 ]]
 
@@ -676,7 +676,7 @@ The following pseudocode describes steps required to perform an LR rotation
 
 .left-column2-small[
 
-```java
+```
 //returns a reference to the new
 //root of the subtree after
 //the LR rotation has been performed
@@ -744,6 +744,42 @@ than A and smaller than C)
 - T2 becomes the left subtree of node B (since all the values in T2 are
 smaller than B and larger than C)
 ]]
+
+
+---
+# Summary of Rotations
+
+- Rotations restore the balance of a subtree rooted at a node A that is out of balance (i.e., BF(A) is either -2 or 2).
+
+--
+
+- The type of rotation that needs to be applied depends on the balance factor of the child of A in the direction of the imbalance.
+
+--
+
+- The cost of one rotation is O(1).
+
+--
+
+- All rotations decrease the height of the subtree rooted at A by 1.
+
+--
+
+  - This implies that after just one rotation, the ancestors of A are all balanced.
+
+--
+
+  - Thus, an insertion in an AVL tree leads to a single rotation at most. 
+
+--
+
+- Double rotations (LR and RL) are just a composition of two single rotations (LL and RR).
+
+--
+ 
+ - First, a rotation is applied in the lower subtree to transform and LR (resp. RL) imbalance into a LL (resp. RR) imbalance
+
+ - Then, a second rotation is applied to resolve that LL (resp. RR) imbalance.
 
 
 ---
