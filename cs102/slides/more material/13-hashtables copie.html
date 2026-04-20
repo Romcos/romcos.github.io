@@ -54,66 +54,81 @@ class: slide
 
 template: section
 
-# Dictionaries / Maps and Why We Want Them
+# Hash Tables / Maps and Why We Want Them
 
 ---
 
 template: slide
 
-## Why Dictionaries?
+## Why Hash Tables?
 
-- Many problems require us to store information as `(key, value)` pairs.
-
---
-
-- The `key` is what we search by, and the `value` is the associated information.
+- We want a data structure that allows us to access existing elements and insert new elements in constant time.
 
 --
 
-- Examples:
-  - country `->` capital
-  - student ID `->` student record
-  - word `->` number of occurrences
+- Is it possible?
+
+--
+  - in theory, if we had infinite memory, yes: save one memory space for any possible element
+  - in practice, there is a trade-off between memory and time (i.e., to get close to O(1) time, we will need
+    to use a lot more memory)
+    
+--
+
+- A hash table is a data structure that *implements* an **associative array**, also called a **dictionary** or simply **map**; an associative array is an abstract data type that maps keys to values.
 
 --
 
-- This abstract idea is called a **dictionary**, **map**, or **associative array**.
+| **Abstract Data Type (ADT)**  | **Implementation** |
+|--------|---------------|
+| Dictionary / Map | Hash Table |
 
 ---
+## What are Hash Tables?
 
-## Dictionary ADT
 
-- A dictionary stores pairs `(key, value)`.
+- A __hash table is a look-up table__ that, when designed well, has nearly O(1) amortized
+running time for a *find* or *insert/add* operations.
 
---
-
-- Keys are **unique**:
-  - each key maps to at most one value
-  - inserting an existing key usually updates or replaces its old value
+- More precisely, a hash table is an array of __fixed size__ containing data items with __unique keys__ (do not confuse *keys* with array indexes),
+together with a function called a __hash function__ that maps keys to indexes in the table/array.
 
 --
 
-- Typical operations:
-  - `put(key, value)` 
-  - `get(key)`
-  - `remove(key)`
-  - `containsKey(key)`
+__Example__
+
+If the keys are integers and the hash table is an array of size 127, then the function `hash(key)`, defined by
+
+`hash(key) = key % 127`
+
+maps numbers to their modulus in the finite field of size 127.
 
 --
 
-- This is an **abstract data type (ADT)**
+Note that
+
+- for each `key` (a number in the above example) there is only one possible value of `hash(key)`,
+
+- multiple keys may have the same value of hash(key) (i.e. the hash function is not one-to-one):
+
+-  for example the keys 10, 137, and 264 all map to the same array location because
+  `$10 \% 127 = 137 \% 127 = 264 \% 127 = 10$`
+
 
 ---
+## What are Hash Tables?
 
-## Dictionary Example
-
-Conceptually, a dictionary resembles an array:
+Conceptually, a hash table is a very general structure:
 --
 
-- we usually reference an element with index `i` of an array `A` by `A[i]`
+- it is a table `H` containing a collection of `(key, value)` pairs with the property
+that `H` may be indexed by the `key` itself
 --
 
-- with a dictionary `H`, we replace the numeric index by a meaningful key and use `H[key]` 
+- we usually reference an element of an array `A` by writing something like `A[i]`, using an integer index value i
+--
+ with a hash table, we replace the index value `i` by the key contained in location `i` and use `H[key]` to access values that we
+are interested in
 --
 name: example
 
@@ -136,19 +151,36 @@ name: example
 <img width="250px" alt="hash function" src="img/14/hash-7.jpg">
 ]
 ]
+--
 
-  - then 
+  - then to access elements we could write a statement such as
 
-      - `print H["Italy"]` should print `Rome`
+      - `print H["Italy"]` to retrieve and print `Rome`, or
 
-      - `print H["Portugal"]` should print `Porto`.
+      - `print H["Portugal"]` to retrieve and print `Porto`.
+
+--
+  - as long as we know the `key` associated with the data item, we can access it in
+      the table in, at least theoretically, O(1) time.
+
+---
+template: example
+
+  - similarly, when we want to insert a new data item into the table, we simply determine its `key`
+    and add it to the table at the location `H[key]` using `H[key] = new_element`
+--
+
+      <br>
+      potential problem: well, sometimes we cannot do this, can we?
+  (think of trying to add another pair (”Italy”, ”Florence”) to the above table: we'll either end up with two pairs with the same `key`
+  or we'll have to replace `"Rome"` with `"Florence"`)
 
 
 ---
 
 template:section
 
-# Dictionaries in Java
+# Hash Tables in Java
 
 ---
 
@@ -161,10 +193,13 @@ template:section
 --
 - `interface Map<K,V>`
 
-  - __an object that maps keys of type `K` to values of type `V`__ 
+  - __an object that maps keys of type `K` to values of type `V`__ (`K` and `V` are generic types,
+    this is a good example of using non-standard generic letters that have their own meaning in the `Map`
+    structure - you can use whatever letters you wish when you implement your own hash tables)
+  - __a map cannot contain duplicate keys; each key can map to at most one value__
 
 --
-  - there main methods are:
+  - there are several methods in the `Map` interface that we are going to be using and you should be familiar with:
 
       - __`V put(K key, V value)`__ associates the specified `value` with the specified `key` in this map;
         returns the previous value associated with `key`, or `null` if there was no mapping for `key`
@@ -179,133 +214,115 @@ template:section
 
 ---
 
-## `Set<E>` Interface
-
-- Java also provides a `Set` interface:
-
-- https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Set.html
-
---
-
-- `interface Set<E>`
-
-  - a `Set` stores elements with **no duplicates**
-  - it is like keeping only the keys, with no associated values
-
---
-
-- Common operations:
-  - `add(E element)`
-  - `contains(E element)`
-  - `remove(E element)`
-  - iterate through the elements
-
---
-
-- Relationship to maps:
-  - a dictionary stores `(key, value)` pairs where `keys` are unique
-  - a set stores just `keys` that must be unique
-  - `Map.keySet()` returns a `Set` because keys in a map are unique
-
----
-
 ## `HashMap<K,V>` vs `TreeMap<K,V>` 
 
-.right-column2[
+.left-column2[
 __`HashMap<K,V>`__ class
 
 - <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/HashMap.html" target="_blank">documentation</a>
 
 - `class HashMap<K,V> implements Map<K,V>`
 
-  A **hash table implementation**.
+  This class implements a hash table, which maps keys to values.
 
-  `keys` just need to implement (override) the `hashCode` method and the `equals` method.
+  Any objects can be used as a `key` or as a `value`.
 
-  Complexity: O(1) time cost for add, get, and remove operations (assuming a good hash function and low number of collisions).
-
-  Downside: does not maintain any order among keys.
+  To successfully store and retrieve objects from a hash table, the objects used
+  as keys must implement (override) the `hashCode` method and the `equals` method.
 
 ]
+--
 
-
-.left-column2[
+.right-column2[
 __`TreeMap<K,V>`__ class
 
 - <a href="https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/TreeMap.html" target="_blank">documentation</a>
 
 - `class TreeMap<K,V> implements Map<K,V>`
 
-A Red-Black (or AVL) **tree based implementation**. 
-
-The `keys` must be `comparable` (or a comparator is provided to the constructor).
-
-Complexity: O(log(n)) time cost for add, get, and remove operations.
+A Red-Black tree based implementation. The map is sorted according to the natural ordering of its keys, or by a Comparator provided at map creation time, depending on which constructor is used.
+This implementation provides guaranteed log(n) time cost for the containsKey, get, put and remove operations.
 ]
 
-
-<div style="clear: both;"></div>
-.center[**The rest of this lecture will focus on the `HashMap` implementation, which is based on hash tables.**]
 ---
 
 template:section
 
-# Hash Tables
+# Implementing Hash Tables
 
 ---
 
-## Why Hash Tables?
+## Implementation Considerations
 
-- Thought experiment: imagine that memory were an **infinite array**.
+- __What is used for storing a hash table?__
+
+--
+  Usually __arrays__ are used to store hash tables.
+  (But there might be other structures stored within each locations in the array.)
 
 --
 
-- Every key can be written in binary, which can be converted into an integer.
+- __What is the type of such array?__
+
+--
+  In theory, a single array location must contain the
+  `(key, value)` pair. This could be implemented as a node containing the two values:
+  ```
+      class HashNode <K, V> {
+          private K key;
+          private V value;
+      }
+  ```
+  In practice, such nodes are often linked in some way, so there may be a need to also store references 
+  to other nodes. 
+  
+--
+
+- __How is the location in the array decided based on the key?__
+
+--
+  This is where the __hash function__ mentioned before comes in. Hash function is
+  applied to the key and it returns the index of an array location in which the given
+  `(key, value)` pair should be stored.
+--
+ (Well, almost, there are a bit of intermediate steps.)
 
 --
 
-- We could use that integer as an array index.
+- __What happens if hash function puts two different keys into the same array location?__
+
+--
+  A __collision__ occurs when two different keys are sent to the same array location.
+  Below, we will discuss several different approaches of __collision resolution__ (deciding what to do when collision occurs).
 
 --
 
-- Then dictionary operations would be conceptually simple:
-  - `put(key, value)`: store the value at that index
-  - `get(key)`: read the value at that index
-  - `remove(key)`: clear the value at that index
+- __Can the array be full and what do we do when it is?__
 
 --
+  The array can certainly become too small to store all the data. __Rehashing__ is
+  the technique used to create a new array and copy all the values to a new array.
 
-- This would give us direct access, essentially in O(1) time.
 
---
+---
 
-- But the memory cost would be enormous:
-  - most of the array would be empty
+template: section
 
---
+# Hash Function
 
-- So there is a trade-off between **space** and **time**
-
---
-
-- A hash table is a practical compromise: it tries to keep access close to O(1) without requiring infinite space.
-
+## (or Java's `hashCode`)
 
 ---
 name:hash-function
+# Hash Function
 
-## What are Hash Tables?
+- Based on unique keys we need to be able to compute the location in the array (or hash table)
+at which the given `(key, value)` combination can be stored.
 
-- A __hash table__ is a data structure that implements a dictionary / map.
-
-
-- It stores `(key, value)` pairs, usually in an array.
-
-
-- The `key` itself is not usually a valid array index. So we use a __hash function__ to transform the key into an integer index in the array. Basic idea:
-  - start with a key
-  - compute an index `i = hash(key)`
-  - use position `i` in the array to store, retrieve, or remove the value
+- Why can't we just use the key itself as an index? Well, it might be
+  - too big,
+  - negative, or
+  - not an integer.
 
 --
 
@@ -340,65 +357,10 @@ template:hash-function
 <img width="450px" alt="hash function" src="img/14/hash-6.jpg">
 ]
 
----
-
-## What are Hash Tables?
-
-__First example__
-
-If the keys are integers and the hash table is an array of size 127, then the function `hash(key)`, defined by
-
-`hash(key) = key % 127`
-
-maps every integer key to one of the valid array indexes `0, 1, ..., 126`.
-
---
-
-For example:
-
-- `hash(10) = 10`
-
-- `hash(42) = 42`
-
---
-
-But also:
-
-- `hash(137) = 10`
-
-- `hash(264) = 10`
-
---
-
-This shows two important facts:
-
-- each key has exactly one hash value, but different keys may map to the same array location.
-
-- This is called a __collision__.
-
-
---
-
-**Handling collisions well is one of the main challenges in implementing hash tables.**
 
 
 ---
-
-template: section
-
-# Hash Function
-
-## (or Java's `hashCode`)
-
----
-
-## Properties of a Good Hash Function
-
-
-- Why can't we just use the key itself as a hash? Well, it might be
-  - too big,
-  - negative, or
-  - not an integer.
+template:hash-function
 
 - __Properties of a good hash function__:
 
@@ -412,14 +374,134 @@ template: section
 
   - (in cryptography / security) make the original key **hard to reconstruct** from the computed hash value (e.g., blockchain). 
 
+
+---
+## Connection to the Birthday Paradox
+
+- A hash collision happens when **two different keys map to the same table index**.
+
+
 --
 
-<br>
+- This is similar to the **birthday paradox**:
+  - in a group of people, we ask whether **two people share the same birthday**
+  - in a hash table, we ask whether **two keys share the same hash location**
 
-- __The `hashCode()` and `equals()` Contract__
+--
 
-  - If `a.equals(b)` is `true`, then `a.hashCode() == b.hashCode()` MUST be true.
+- The surprising lesson from the birthday paradox is:
 
+> You do **not** need the table to be full before collisions become likely.
+
+--
+
+- In fact, with:
+  - `n` possible hash locations
+  - about `sqrt{n}` inserted keys
+
+  collisions already become reasonably likely.
+
+  - So even a **large hash table** can start having collisions
+  much earlier than we might expect.
+
+--
+
+- Why is this the case? 
+
+  - The number of pairs of keys grows quadratically with the number of keys, so the probability of a collision grows much faster than the number of keys.
+  - The exact probability of a collision, given k elements and n locations can be computed explicitly 
+
+
+
+---
+
+## Good Hash Function
+
+- __Easy to compute__ generally means that the function is an O(1) operation,
+practically independent of the input size and hash table size.
+
+  - For example, if the function tried to find all of the prime factors of a given
+    number in order to compute the hash function, this would not be easy to compute.
+
+  - Being easy to compute is a fuzzy concept.
+
+--
+
+- __Repeatable__ means that making two calls to a hash function with the same argument should produce the same result.
+
+  - It would be much easier to compute values quickly and disperse them well if
+    you could use random numbers, but there is not way to recover the data from
+    the hash table once it is saved there.
+
+--
+
+- __Dispersing the keys evenly__  means that there is as much distance between
+  successive pairs of keys as possible.
+
+  - For example, if the hash table is of size 1000 and there are 200 keys in it,
+   they should each be about five _spaces_ apart from their neighbors.
+
+
+
+--
+
+.center80[
+.important[
+In principle, if the set of keys is finite and known in advance, we can construct
+a perfect hash function, one that maps each key to a unique index. In
+practice, the set of keys is rarely known at the time of writing the program and may not be finite.
+]]
+
+---
+
+## The `hashCode()` and `equals()` Contract
+
+- If `a.equals(b)` is `true`, then `a.hashCode() == b.hashCode()` MUST be true.
+
+--
+
+- If hashCode is different, the objects are definitely not equal.
+
+--
+
+- Why?
+  - If you override equals but not hashCode, your object might get lost in the map (put in bucket A, but looked for in bucket B).
+
+---
+
+# Example (Bad Hash Function)
+
+If we have the integer keys
+
+`           112, 46, 75, 515`
+
+we would want a function that maps them to the numbers/locations/indexes 0, 1, 2, and 3 uniquely.
+
+--
+
+Suppose that `hash(key)` is a function that returns the sum of the decimal digits
+in the key and if that sum has more than one digit itself we add them together again . In this case we have
+
+- `hash(112)` = 1 + 1 + 2 = 4,
+
+- `hash(46)` = `hash(4 + 6 = 10)` = 1,
+
+- `hash(75)` = `hash(7 + 5 = 12)` = 3, and
+
+- `hash(515)` = `hash(5 + 1 + 5 = 11)` = 2.
+
+--
+
+This is a perfect hash function for the above four keys.
+
+--
+
+But it is very poor hash function for larger number of keys. Why is it bad:
+
+- It matches all keys to one digit indexes of an array. What if we have 250 keys?
+
+- It completely ignores information about position of digits in the key so 155,
+515, 551 are all assigned the same index.
 
 ---
 
@@ -455,12 +537,6 @@ keys into hash tables (`String`, `Integer`, ...).
   }
   ```
   ]
-
---
-
-- `31` is a practical choice: it is a prime number, which helps avoid overly regular bit patterns.
-- the result is an `int`, so the hash is always a 32-bit signed integer (at most 2^31 - 1). If the computation exceeds the `int` range, Java just wraps around; this overflow is expected and is part of the hash computation
-
   
 ---
 
@@ -497,12 +573,6 @@ public static int hashCode(double value) {
 
 ```
 
---
-
-- a `double` is stored using 64 bits, not 32
-- Java first converts the floating-point value to its 64-bit bit pattern
-- then it combines the high 32 bits and low 32 bits with XOR to produce a single `int` hash code
-
 
 ---
 
@@ -512,73 +582,53 @@ template: section
 
 ---
 
-## Connection to the Birthday Paradox
-
-- A hash collision happens when **two different keys map to the same table index**.
-
-
---
-
-- This is similar to the **birthday paradox**:
-  - in a group of people, we ask whether **two people share the same birthday**
-  - in a hash table, we ask whether **two keys share the same hash location**
-
---
-
-- The surprising lesson from the birthday paradox is:
-
-> You do **not** need the table to be full before collisions become likely.
-
---
-
-- In fact, with:
-  - `n` possible hash locations
-  - about `sqrt{n}` inserted keys
-
-  collisions already become reasonably likely.
-
-  - So even a **large hash table** can start having collisions
-  much earlier than we might expect.
-  - **Experiment:** Ask students to pick a number between 1 and k^2/4 where k is the number of students. 
-
---
-
-- Why is this the case? 
-
-  - The number of pairs of {1,...,k} is k(k-1)/2, which is about k^2/2.
-
----
-
 ## What happens when two things map to the same location?
 
 
-Two approaches to collision resolution:
+There are different ways of handling situations in which two keys map to the same location (called collision):
 
 - __open addressing__ (also known as __closed hashing__) - finds an alternative location
   for the `(key, value)` pair, if the first location is occupied,
 
-  - Linear probing
-
-  - Quadratic probing
-
 - __closed addressing__ (also known as __open hashing__) - allows multiple `(key, value)`
   pairs to be stored in a single array location.
 
-  - Separate chaining
+--
+name: collision-resolution
 
+Each of these two have multiple ways of being implemented. Here are examples of how they can be handled.
 
 ---
 
-## Linear Probing
+template:collision-resolution
 
+__Open addressing__
 
+  - __linear probing__ - put the `(key, value)` pair in the next available location,
+    if that is occupied, try the next one and so on,
 
-- If the hashed location is occupied, we try the next location.
+  - __quadratic probing__ - put the `(key, value)` pair in the next available location (1^2 away),
+    if that is occupied, if that is occupied, then put in the location four spaces away (2^2), then nine spaces away (3^2), and so on
+    (use a square of how many times we tried to put it in the next location).
 
+.smaller[In both of these, we need to handle retrieving elements from the hash table in a
+special way - they may not be in the locations computed by the hash value of the key.
+If the `(key, value)` pair is not found at the location computed by the hash function,
+we have to check all the other places in which the collision resolution method might have place them.]
+
+---
+
+template:collision-resolution
+
+__Closed addressing__
+
+  - __separate chaining__ - put each `(key, value)` pair that maps to the same array
+  location in a linked list (*chain* or *bucket*) that starts at that array location.
+  If implemented well, the linked lists remain always very short.
+  
 --
 
-- If that one is occupied too, we keep moving one step at a time until we find an empty slot.
-
+  - Java implementation detail: when a chain (linked list) gets too long (default threshold is 8), Java transforms that specific list into a balanced binary search tree. This improves the worst-case search time from $O(N)$ to $O(\log N)$.
 
 
 
@@ -931,24 +981,6 @@ template:example_linear
     - hash (3) = 3 % 5 = 3, index 3 is empty, **but marked as removed** so we continue to index 4, and then index 0 where we find key = 3 and return string C
 
 ---
-
-## Quadratic Probing
-
-- Quadratic probing is also an __open addressing__ method.
-
---
-
-- Instead of checking the next slot, it checks positions that are `1^2`, `2^2`, `3^2`, ... away from the original hashed location.
-
---
-
-- This can reduce clustering compared to linear probing.
-
---
-
-- But it may skip some locations, so insertion can fail to find an available slot even when the table is not full.
-
----
 name:example_quad
 
 ## Example: collisions with quadratic probing 
@@ -1130,51 +1162,40 @@ template:example_quad
 
 - This is sometimes an issue with quadratic probing since it skips some possibly empty indexes. 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
----
-
-## Separate Chaining
-
-- Separate chaining is a __closed addressing__ method.
-
 --
 
-- Each array location stores a small collection of all pairs that hash to that index.
+**TO DO: redo this example with table size M = 7 using quadratic probing** 
+- Does it have the same issue of being unable to find the location for (22,"D")? 
 
---
 
-- A common implementation uses a linked list, also called a __chain__ or __bucket__.
 
---
 
-- Java implementation detail: when a chain gets too long (default threshold is 8), Java turns that bucket into a balanced binary search tree, improving the worst-case search time from $O(N)$ to $O(\log N)$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ---
 name:example_seperate
@@ -1378,6 +1399,10 @@ divided by the size of the array) should be less than 1 (often it is expected to
 
   $$\text{load factor} = \dfrac{\text{number of elements}}{\text{capacity of the table}}$$
 
+--
+
+  WARNING <br/>
+  The above definition uses the number of elements! (NOT the number of chains.)
   
 --
 
@@ -1428,6 +1453,22 @@ then a new table will have size 15, and all the existing values need to be _reha
 --
 
 - 16 % 15 = 1 results in a collision and the actual location will depend on the collision resolution method. 
+
+
+---
+
+template:section
+
+# Examples and Things to Think About
+
+
+---
+
+## Do we need the `key`s?
+
+Explain if we actually need to store the keys in a hash table?
+Which operations could do without keys? For which operations are keys necessary?
+
 
 
 

@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Graphs - Intro</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-    <link href="css/slides.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
-    <textarea id="source">
+<head>
+  <title>Graphs - Intro</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+  <link href="css/slides.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <textarea id="source">
 
 class: center, middle, title-slide
 
@@ -19,7 +21,7 @@ class: center, middle, title-slide
 ## Graphs - Introduction
 
 .author[
-Instructor: Joanna Klukowska <br><br><br>
+Instructor: Romain Cosson <br><br><br>
 ]
 
 .license[
@@ -46,7 +48,7 @@ template:default
 name:slide
 class: slide
 
-.bottom-left[&#169; Joanna Klukowska. CC-BY-SA.]
+.bottom-left[&#169; J. Klukowska (mod. R.C.) CC-BY-SA.]
 
 ---
 
@@ -162,9 +164,13 @@ name:adj-list
 
 .right-column2[
 ```
-    class Node {
-        label/data 
-        list of nodes adjacent to it
+    class Node<T> {
+        // Data
+        private T label;
+        
+        
+        // Adjacency list
+        private List<Node<T>> adj; 
     }
 ```
 ]
@@ -712,17 +718,17 @@ how to map it to a graph.
 
 
     </textarea>
-     <script src="js/remark.js" type="text/javascript">
+  <script src="js/remark.js" type="text/javascript">
+  </script>
+  <script src="js/remark_conf.js" type="text/javascript">
+  </script>
+
+  <script type="text/javascript" async
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
     </script>
-    <script src="js/remark_conf.js" type="text/javascript">
-    </script>
-
-    <script type="text/javascript" async
-  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML">
-</script>
 
 
-<script type="text/x-mathjax-config">
+  <script type="text/x-mathjax-config">
    MathJax.Hub.Config({
      extensions: ["tex2jax.js"],
      jax: ["input/TeX", "output/HTML-CSS"],
@@ -736,5 +742,6 @@ how to map it to a graph.
 </script>
 
 
-  </body>
+</body>
+
 </html>
