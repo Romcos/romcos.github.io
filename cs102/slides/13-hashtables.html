@@ -54,7 +54,7 @@ class: slide
 
 template: section
 
-# Dictionaries / Maps and Why We Want Them
+# Dictionaries / Maps 
 
 ---
 
@@ -596,7 +596,6 @@ name:example_linear
 
 - hash function `hash(key) = key % M `
 
-- collision resolution: linear probing 
 
 ---
 
@@ -1430,7 +1429,38 @@ then a new table will have size 15, and all the existing values need to be _reha
 - 16 % 15 = 1 results in a collision and the actual location will depend on the collision resolution method. 
 
 
+---
 
+template: slide
+
+## Why Is Hashing Important in Security?
+
+- In **hash tables**, hashing is used for fast lookup.
+
+- In **security**, hashing has a different goal:
+  - compute a short **fingerprint** of data
+  - make it hard to reconstruct the original input
+  - make it hard to find two different inputs with the same hash
+
+--
+
+- Common security uses:
+  - **password storage**: store a hash of the password, not the password itself
+  - **file integrity**: verify that a download was not modified
+  - **proof of work**: in blockchain, prove that you have done a certain amount of computational work by finding an input that hashes to a value with certain properties (e.g., starts with a certain number of zeros)
+--
+
+- **Concrete example: P2P systems (like BitTorrent)**
+  - files are split into pieces
+  - each piece has a hash
+  - when a piece is downloaded from peers, its hash is recomputed
+  - if the hash does not match, the piece was corrupted or tampered with and is rejected
+
+--
+
+- Conclusion:
+  
+  **Hash tables use hashing for efficiency; security uses hashing for integrity and verification.**
 
 
 </optgroup>
