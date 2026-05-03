@@ -465,7 +465,7 @@ An algorithm using the adjacency list, `adj`, of a graph with
 
 
   ```
-  visited[N] - boolean array with all values set initially to false
+  visited[N] - boolean array or boolean **dictionary** with all values initially false (or **set**)
 
   dfs ( start )
       if visited[start] return   //already processed this node
@@ -522,7 +522,7 @@ __Task__ Propose a BFS traversal of this graph starting at node J.
 ---
 template:bfs
 
-An algorithm using the adjacency list `adj` of a graph with `n` nodes and `m` edges, `O(n+m)`
+An algorithm using the adjacency list `adj` of a graph with `n` nodes and `m` edges. Complexity: `O(n+m)`
 
 ```
   visited[N] - boolean array with all values set initially to false

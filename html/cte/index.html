@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="fr">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Multi Agent Maze Exploration / Collective Tree Exploration</title>
   <!-- Copyright (c) 2026 Romain — see LICENSE for terms. -->
 
-<!-- 
+  <!-- 
   ______________________ CSS ____________________
   Complete CSS Stylying 
     body, button, select: refer to html elements
@@ -14,33 +15,193 @@
   __________________________________________
 -->
   <style>
-    body { display:flex; flex-direction:column; align-items:center; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; }
-    .layout { display:flex; gap:20px; align-items:flex-start; width:100%; max-width:1400px; }
-    .controls { width:320px; min-width:260px; }
-    .canvasPanel { flex:1; display:flex; justify-content:center; }
-    .debugPanel { width:160px; min-width:160px; display:none; }
-    .debugPanel.visible { display:block; }
-    .debugPanel button { width:100%; margin-top:8px; }
-    .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; justify-content:flex-start; }
-    label { display: inline-flex; gap: 8px; align-items: center; }
-    input[type="number"] { width: 90px; padding: 6px 8px; }
-    input[type="range"] { width: 220px; }
-    select { padding: 6px 8px; }
-    button { padding: 8px 12px; cursor: pointer; }
-    canvas { border: 1px solid #ddd; margin-top: 12px; display:block; }
-    .hint { color: #666; font-size: 14px; margin-top: 8px; line-height: 1.35; }
-    .panel { margin-top: 10px; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; box-sizing: border-box; }
-    .agentRow { display:flex; align-items:center; gap:10px; padding:6px 0; flex-wrap: wrap; }
-    .agentRow input[type="range"] { flex: 1 1 160px; min-width: 120px; }
-    .swatch { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.15); }
-    .pill { padding: 3px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 13px; background:#fff; display:inline-block; min-width:64px; text-align:center; }
-    .small { font-size: 13px; color:#444; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      margin: 16px;
+    }
+
+    .layout {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .controls {
+      width: 320px;
+      min-width: 260px;
+    }
+
+    .canvasPanel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+    }
+
+    .debugPanel {
+      width: 160px;
+      min-width: 160px;
+      display: none;
+    }
+
+    .debugPanel.visible {
+      display: block;
+    }
+
+    .debugPanel button {
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-start;
+    }
+
+    label {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    input[type="number"] {
+      width: 90px;
+      padding: 6px 8px;
+    }
+
+    input[type="range"] {
+      width: 220px;
+    }
+
+    select {
+      padding: 6px 8px;
+    }
+
+    button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+
+    canvas {
+      border: 1px solid #ddd;
+      margin-top: 12px;
+      display: block;
+    }
+
+    .hint {
+      color: #666;
+      font-size: 14px;
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+
+    .hint details {
+      margin-top: 8px;
+    }
+
+    .hint summary {
+      color: #444;
+      cursor: pointer;
+      font-weight: 650;
+      user-select: none;
+    }
+
+    .hint p {
+      margin: 6px 0 0;
+    }
+
+    .panel {
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      background: #fafafa;
+      box-sizing: border-box;
+    }
+
+    .agentRow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      flex-wrap: wrap;
+    }
+
+    .agentRow input[type="range"] {
+      flex: 1 1 160px;
+      min-width: 120px;
+    }
+
+    .swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .pill {
+      padding: 3px 8px;
+      border: 1px solid #ddd;
+      border-radius: 999px;
+      font-size: 13px;
+      background: #fff;
+      display: inline-block;
+      min-width: 64px;
+      text-align: center;
+    }
+
+    .small {
+      font-size: 13px;
+      color: #444;
+    }
+
+    .description {
+      max-width: 900px;
+      margin: 0 auto 14px;
+      line-height: 1.45;
+      color: #333;
+    }
+
+    .description summary {
+      margin: 0 0 8px;
+      font-size: 24px;
+      font-weight: 650;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .description p {
+      margin: 0;
+    }
+
     @media (max-width: 800px) {
-      .layout { flex-direction:column; align-items:center; }
-      .controls { width:90%; }
-      .canvasPanel { width:100%; }
-      .debugPanel { width:90%; }
-      input[type="range"] { width: 100%; }
+      .layout {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .controls {
+        width: 90%;
+      }
+
+      .canvasPanel {
+        width: 100%;
+      }
+
+      .debugPanel {
+        width: 90%;
+      }
+
+      input[type="range"] {
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -54,6 +215,15 @@
 -->
 
 <body>
+  <details class="description" open>
+    <summary>Collective Tree Exploration</summary>
+    <p>
+      This illustration shows several agents exploring an unknown tree, represented here as a 2D maze. All agents start
+      from the upper-left cell and progressively claim cells as they discover them. The
+      controls let you update maze shapes, team sizes, and exploration strategies. For more theoretical background, see
+      <a href="https://arxiv.org/abs/2311.01354">this paper</a>.
+    </p>
+  </details>
   <div class="layout">
     <div class="controls">
       <div class="row">
@@ -109,36 +279,54 @@
       </div>
 
       <div class="hint">
-       - Maze generation: <br/>
-      <b>Wilson</b> : uniform spanning tree, D ~ N. <br/>
-      <b>Recursive DFS</b> : longer paths, D ~ N^(5/4).<br/>
-      <b>Comb</b> : difficult for CTE.<br/>
-      <b>Binary Tree</b> : biased carving (north/east), diagonal flows.
-      <!--
-      <b>Kruskal</b> : randomized Kruskal, bushier with many short branches.
-      <b>Sidewinder</b> : long horizontal corridors with occasional vertical links.
-      <b>Eller</b> : row-by-row merges with guaranteed vertical links per set.
-      <b>Prim</b> : randomized Prim, bushy with many short branches.
-      <b>Hunt and Kill</b> : long runs with periodic hunts for new starts.
-      <b>Spine + Branches</b> : biased spine with a few long offshoots.
-      -->
-      <br/><br/>
-       - Algorithms: <br/>
-      <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br/>
-      <b>CTE</b> Greedy algorithm. Agents go to nearest unfinished subtree. Accelerated version (using complete communications). <br/>
-      <b>LGA</b> Locally greedy v3: reanchor with shared anchor counts.<br/>
-      <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
-      <!--
-      <b>LGA</b> First naive locally greedy implementation: reanchor to shallowest frontier node.<br/>
-      <b>LGA2</b> Locally greedy v2: reanchor by minimizing lambda * depth(v) + dist(u,v).<br/>
-      <b>LGA3</b> Locally greedy v3: reanchor with shared anchor counts.<br/>
-      <b>LGA4</b> Locally greedy v4: reanchor with shared anchor counts (log variant).<br/>
-      
-      <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
-      <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
-      -->
-      <br/><br/>
-       - Suggested parameters: Try with large number of robots (up to 50), high speeds, and large N (up to 300) to see nice patterns emerge. 
+        <details>
+          <summary>Maze generation</summary>
+          <p>
+            <b>Wilson</b> : uniform spanning tree, D ~ N. <br />
+            <b>Recursive DFS</b> : longer paths, D ~ N^(5/4).<br />
+            <b>Comb</b> : difficult for CTE.<br />
+            <b>Binary Tree</b> : biased carving (north/east), diagonal flows.
+            <!--
+            <b>Kruskal</b> : randomized Kruskal, bushier with many short branches.
+            <b>Sidewinder</b> : long horizontal corridors with occasional vertical links.
+            <b>Eller</b> : row-by-row merges with guaranteed vertical links per set.
+            <b>Prim</b> : randomized Prim, bushy with many short branches.
+            <b>Hunt and Kill</b> : long runs with periodic hunts for new starts.
+            <b>Spine + Branches</b> : biased spine with a few long offshoots.
+            -->
+          </p>
+        </details>
+
+        <details>
+          <summary>Algorithms</summary>
+          <p>
+            <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br />
+            <b>CTE</b> Greedy algorithm. Agents go to nearest unfinished subtree. Accelerated version (using complete
+            communications). <br />
+            <b>LGA</b> Locally greedy v3: reanchor with shared anchor counts.<br />
+            <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
+            <!--
+            <b>LGA</b> First naive locally greedy implementation: reanchor to shallowest frontier node.<br/>
+            <b>LGA2</b> Locally greedy v2: reanchor by minimizing lambda * depth(v) + dist(u,v).<br/>
+            <b>LGA3</b> Locally greedy v3: reanchor with shared anchor counts.<br/>
+            <b>LGA4</b> Locally greedy v4: reanchor with shared anchor counts (log variant).<br/>
+            
+            <b>Potential algo [CM24]</b> TODO. Full communication.<br/>
+            <b>OPT</b> 2-approximation of offline algorithm. Full knowledge.
+            -->
+          </p>
+        </details>
+
+        <details>
+          <summary>Suggested parameters</summary>
+          <p>
+            Try algorithm LGA with large number of robots (up to 50), max speeds, large N (up to 300), and shading
+            unvisited nodes (see debug panel) to have nice
+            (fractal)
+            patterns
+            emerge.
+          </p>
+        </details>
       </div>
 
       <div id="timerPanel" class="panel">
@@ -216,7 +404,7 @@
       </div>
     </div>
   </div>
-  
+
 
   <!-- 
   ______________________ JAVASCRIPT ____________________
@@ -243,8 +431,8 @@
 
     const DIRS = [
       { dx: 0, dy: -1, bit: N, opp: S }, // 0
-      { dx: 1, dy: 0,  bit: E, opp: W }, // 1
-      { dx: 0, dy: 1,  bit: S, opp: N }, // 2
+      { dx: 1, dy: 0, bit: E, opp: W }, // 1
+      { dx: 0, dy: 1, bit: S, opp: N }, // 2
       { dx: -1, dy: 0, bit: W, opp: E }, // 3
     ];
 
@@ -274,7 +462,7 @@
         if (!(m & W) && x > 0) out.push(i - 1);
         return out;
       }
-    
+
       // -------------------------
       // Maze generators as GridMaze static methods
       // These were previously top-level functions. Keeping them as
@@ -365,7 +553,7 @@
 
         return maze;
       }
-      
+
       static generateComb(w, h) {
         // Deterministic comb:
         // Backbone: full top row (0,0) -> (w-1,0)
@@ -706,7 +894,7 @@
             const dx = nx - cx;
             const dy = ny - cy;
             if ((biasDx === 1 && dx > 0) || (biasDx === -1 && dx < 0) ||
-                (biasDy === 1 && dy > 0) || (biasDy === -1 && dy < 0)) {
+              (biasDy === 1 && dy > 0) || (biasDy === -1 && dy < 0)) {
               preferred.push(options[i]);
             }
           }
@@ -815,7 +1003,7 @@
       return neigh;
     }
 
-    
+
 
     // =========================
     // Couleurs
@@ -1597,7 +1785,7 @@
     // Rendu
     // =========================
     // Canvas sizing (default target size)
-    function fitCanvas(canvas, targetCssPx = 900) {
+    function fitCanvas(canvas, targetCssPx = 765) {
       const dpr = window.devicePixelRatio || 1;
       const parentW = (canvas.parentElement && canvas.parentElement.clientWidth) || document.body.clientWidth;
       const cssW = Math.min(targetCssPx, Math.max(100, Math.floor(parentW - 32)));
@@ -2419,4 +2607,5 @@
     requestAnimationFrame(tick);
   </script>
 </body>
+
 </html>

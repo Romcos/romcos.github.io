@@ -11,6 +11,19 @@
             stroke-width: 1.5px;
         }
 
+        .node.clickable-node {
+            cursor: pointer;
+            transform-box: fill-box;
+            transform-origin: center;
+            transition: filter 120ms ease, stroke-width 120ms ease, transform 120ms ease;
+        }
+
+        .node.clickable-node:hover {
+            filter: drop-shadow(0 0 5px rgba(0, 0, 255, 0.75));
+            stroke-width: 3px;
+            transform: scale(1.14);
+        }
+
         .edge {
             stroke: #999;
             stroke-width: 1.5px;
@@ -21,6 +34,11 @@
             stroke-width: 3px;
         }
 
+        .preview-highlight {
+            stroke: #ff9a9a;
+            stroke-width: 4px;
+        }
+
         .rules-container {
             margin-top: 20px;
             padding: 15px;
@@ -29,6 +47,45 @@
             background-color: #f9f9f9;
             width: 60%;
             text-align: center;
+        }
+
+        .green-text {
+            color: green;
+            font-weight: 700;
+        }
+
+        .blue-text {
+            color: blue;
+            font-weight: 700;
+        }
+
+        .score-display {
+            margin: 10px 0 0;
+            color: red;
+            font-weight: 700;
+        }
+
+        .score-display.cost-bump {
+            animation: cost-bump 280ms ease-out;
+        }
+
+        @keyframes cost-bump {
+            0% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.16);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .red-text {
+            color: red;
+            font-weight: 700;
         }
 
         .svg-container {
@@ -86,35 +143,46 @@
         .button:active {
             transform: scale(0.98);
         }
+
+        .page-note {
+            width: 60%;
+            margin: 14px 0 24px;
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.35;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div class="rules-container">
         <h2>Ultrametric Traversal</h2>
-        <h5>Rules of the Game</h5>
         <p>
-            You are an <strong>agent</strong> (in green).
+            You are the <strong>agent</strong> in <span class="green-text">green</span>.
             Your goal is to reach the last layer (depth 15)
-            while traversing as few edges as possible.
-            Your score at the end is the number of highlighted edges. Lower is better. Perfect score is 15!
-            <br><br>
-            <i>The tree is sampled before you start playing. All nodes have
-                the same chances of having children. </i>
+            by clicking on the <span class="blue-text">blue</span> nodes while
+            traversing as few edges as possible.
+            Your <span class="red-text">cost</span> at the end is the number of traversed edges. Lower is better.
+            Perfect cost is 15!
         </p>
+        <p class="score-display">Cost: <span id="score">0</span></p>
     </div>
     <div class="svg-wrapper" style="position: relative; display: inline-block;margin-top: 20px;">
-        <svg width="1000" height="800" class="svg-container"></svg>
+        <svg width="810" height="648" class="svg-container"></svg>
         <div class="overlay">
             <div class="overlay-content">
-                <p>That's it!</p>
-                <p>Your Score: <span id="printScore"></span></p>
+                <p>Finished!</p>
+                <p>Your Cost: <span id="printScore"></span></p>
                 <button id="resume-restart" class="button" onclick="location.reload()">Retry</button>
             </div>
         </div>
     </div>
-
-    <p>Score: <span id="score">0</span></p>
+    <p class="page-note">
+        The tree is sampled before you start playing. All nodes have the same chances of having children.
+        See
+        <a href="https://arxiv.org/abs/2404.16176">this paper</a> for the theoretical analysis of some algorithms.
+    </p>
 
     <script>
         function showOverlay() {
@@ -172,16 +240,17 @@
         }
 
         const svg = d3.select("svg");
-        const nodeRadius = 15;
+        const nodeRadius = 12.75;
         let edgeGroup = svg.append("g");
         let nodeGroup = svg.append("g");
         let nodeMap = {};
 
         function updateLayout() {
-            const svgHeight = 800;
-            const svgWidth = 1000;
+            const svgHeight = 648;
+            const svgWidth = 810;
             const maxDepth = depth;
             const layerHeight = svgHeight / (maxDepth + 1);
+            const horizontalPadding = 90;
 
             // Only render nodes and edges up to currentLayer
             const visibleNodes = tree.nodes.filter(n => n.depth <= currentLayer);
@@ -192,13 +261,13 @@
 
             // Build hierarchy and apply tree layout
             const rootHierarchy = d3.hierarchy(buildHierarchy(visibleNodes));
-            const treeLayout = d3.tree().size([svgWidth - 200, 100]); // y ignored
+            const treeLayout = d3.tree().size([svgWidth - 2 * horizontalPadding, 100]); // y ignored
             treeLayout(rootHierarchy);
 
             nodeMap = {};
             rootHierarchy.descendants().forEach(d => {
                 const data = d.data;
-                data.x = d.x + 100;
+                data.x = d.x + horizontalPadding;
                 data.y = data.depth * layerHeight + 30;
                 nodeMap[data.id] = data;
             });
@@ -235,6 +304,8 @@
                     .attr("cy", d => nodeMap[d.id].y)
                     .style("opacity", 0) // hide on enter // hide on enter
                     .style("fill", "blue")//nodes that enter will appear blue!
+                    .on("mouseenter", handleNodeHover)
+                    .on("mouseleave", clearPathPreview)
                     .on("click", handleNodeClick),
                 update => update.transition().duration(500)
                     .attr("cx", d => nodeMap[d.id].x)
@@ -251,6 +322,7 @@
                 .style("opacity", 1);
 
             nodeGroup.selectAll("circle")
+                .classed("clickable-node", d => d.depth === currentLayer)
                 .transition()
                 .duration(500)
                 .style("opacity", 1)
@@ -316,6 +388,8 @@
         function handleNodeClick(event, d) {
             if (d.depth !== currentLayer) return;
 
+            clearPathPreview();
+            nodeGroup.selectAll("circle").classed("clickable-node", false);
             d3.select(event.currentTarget).style("fill", "green");
 
             const path = getPathBetween(agentNode, d);
@@ -324,6 +398,7 @@
             highlightPath(path);
             score += path.length - 1;
             document.getElementById("score").innerText = score;
+            animateCostUpdate();
             agentNode = d;
             currentLayer++;
             //Updates the layout, while not revealing the last layer (to avoid that edges or nodes would enter at wrong place)
@@ -337,6 +412,42 @@
                 }
             }, 1000);
         }
+
+        function handleNodeHover(event, d) {
+            if (d.depth !== currentLayer) return;
+
+            const path = getPathBetween(agentNode, d);
+            if (!path) return;
+
+            showPathPreview(path);
+        }
+
+        function showPathPreview(path) {
+            clearPathPreview();
+
+            const pathEdges = [];
+            for (let i = 0; i < path.length - 1; i++) {
+                pathEdges.push({ source: path[i].id, target: path[i + 1].id });
+            }
+
+            const lines = edgeGroup.selectAll("line");
+            pathEdges.forEach(pe => {
+                lines.filter(d => (d.source === pe.source && d.target === pe.target) || (d.source === pe.target && d.target === pe.source))
+                    .classed("preview-highlight", true);
+            });
+        }
+
+        function clearPathPreview() {
+            edgeGroup.selectAll("line").classed("preview-highlight", false);
+        }
+
+        function animateCostUpdate() {
+            const costDisplay = document.querySelector(".score-display");
+            costDisplay.classList.remove("cost-bump");
+            void costDisplay.offsetWidth;
+            costDisplay.classList.add("cost-bump");
+        }
+
         function highlightPath(path) {
             const pathEdges = [];
             for (let i = 0; i < path.length - 1; i++) {
