@@ -11,6 +11,19 @@
             stroke-width: 1.5px;
         }
 
+        .node.clickable-node {
+            cursor: pointer;
+            transform-box: fill-box;
+            transform-origin: center;
+            transition: filter 120ms ease, stroke-width 120ms ease, transform 120ms ease;
+        }
+
+        .node.clickable-node:hover {
+            filter: drop-shadow(0 0 5px rgba(0, 0, 255, 0.75));
+            stroke-width: 3px;
+            transform: scale(1.14);
+        }
+
         .edge {
             stroke: #999;
             stroke-width: 1.5px;
@@ -21,6 +34,11 @@
             stroke-width: 3px;
         }
 
+        .preview-highlight {
+            stroke: #ff9a9a;
+            stroke-width: 4px;
+        }
+
         .rules-container {
             margin-top: 20px;
             padding: 15px;
@@ -29,6 +47,45 @@
             background-color: #f9f9f9;
             width: 60%;
             text-align: center;
+        }
+
+        .green-text {
+            color: green;
+            font-weight: 700;
+        }
+
+        .blue-text {
+            color: blue;
+            font-weight: 700;
+        }
+
+        .score-display {
+            margin: 10px 0 0;
+            color: red;
+            font-weight: 700;
+        }
+
+        .score-display.cost-bump {
+            animation: cost-bump 280ms ease-out;
+        }
+
+        @keyframes cost-bump {
+            0% {
+                transform: scale(1);
+            }
+
+            45% {
+                transform: scale(1.16);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .red-text {
+            color: red;
+            font-weight: 700;
         }
 
         .svg-container {
@@ -86,35 +143,46 @@
         .button:active {
             transform: scale(0.98);
         }
+
+        .page-note {
+            width: 60%;
+            margin: 14px 0 24px;
+            color: #555;
+            font-size: 0.95em;
+            line-height: 1.35;
+            text-align: center;
+        }
     </style>
 </head>
 
 <body>
     <div class="rules-container">
         <h2>Ultrametric Traversal</h2>
-        <h5>Rules of the Game</h5>
         <p>
-            You are an <strong>agent</strong> (in green).
+            You are the <strong>agent</strong> in <span class="green-text">green</span>.
             Your goal is to reach the last layer (depth 15)
-            while traversing as few edges as possible.
-            Your score at the end is the number of highlighted edges. Lower is better. Perfect score is 15!
-            <br><br>
-            <i>The tree is sampled before you start playing. All nodes have
-                the same chances of having children. </i>
+            by clicking on the <span class="blue-text">blue</span> nodes while
+            traversing as few edges as possible.
+            Your <span class="red-text">cost</span> at the end is the number of traversed edges. Lower is better.
+            Perfect cost is 15!
         </p>
+        <p class="score-display">Cost: <span id="score">0</span></p>
     </div>
     <div class="svg-wrapper" style="position: relative; display: inline-block;margin-top: 20px;">
-        <svg width="1000" height="800" class="svg-container"></svg>
+        <svg width="810" height="648" class="svg-container"></svg>
         <div class="overlay">
             <div class="overlay-content">
-                <p>That's it!</p>
-                <p>Your Score: <span id="printScore"></span></p>
+                <p>Finished!</p>
+                <p>Your Cost: <span id="printScore"></span></p>
                 <button id="resume-restart" class="button" onclick="location.reload()">Retry</button>
             </div>
         </div>
     </div>
-
-    <p>Score: <span id="score">0</span></p>
+    <p class="page-note">
+        The tree is sampled before you start playing. All nodes have the same chances of having children.
+        See
+        <a href="https://arxiv.org/abs/2404.16176">this paper</a> for the theoretical analysis of some algorithms.
+    </p>
 
     <script>
         function showOverlay() {
@@ -127,39 +195,37 @@
             document.querySelector(".overlay").style.display = "none";
         }
 
-        // = Game variables =
+
         const width = 5;
         const depth = 15;
         let tree = { nodes: [], edges: [] };
         let nodeId = 0;
-        const leaves = new Set();
+        let layers = [];
         let agentNode = null;
         let currentLayer = 0;
         let score = 0;
 
-        // = Hierarchy variables =
-        const svg = d3.select("svg");
-        const nodeRadius = 15;
-        let edgeGroup = svg.append("g");
-        let nodeGroup = svg.append("g");
-        let nodeMap = {};
-
-
         function createTree(width, depth) {
             let root = { id: nodeId++, depth: 0, parent: null };
             tree.nodes.push(root);
+            layers.push([root]);
 
-            for (let i = 0; i < width; i++) {
-                //let parent = layers[d - 1][Math.floor(Math.random() * layers[d - 1].length)];
-                let node = { id: nodeId++, depth: 1, parent: root.id };
-                leaves.add(node)
-                tree.nodes.push(node);
-                tree.edges.push({ source: root.id, target: node.id, depthParent: parent.depth });
+            for (let d = 1; d <= depth; d++) {
+                let layer = [];
+                for (let i = 0; i < width; i++) {
+                    let parent = layers[d - 1][Math.floor(Math.random() * layers[d - 1].length)];
+                    let node = { id: nodeId++, depth: d, parent: parent.id };
+                    tree.nodes.push(node);
+                    tree.edges.push({ source: parent.id, target: node.id, depthParent: parent.depth });
+                    layer.push(node);
+                }
+                layers.push(layer);
             }
         }
 
+        createTree(width, depth);
+
         function buildHierarchy(nodes) {
-            //builds a hierarchy (in the specific sense of d3)
             let nodeMap = new Map();
             nodes.forEach(n => nodeMap.set(n.id, { ...n, children: [] }));
             let root = null;
@@ -173,30 +239,35 @@
             return root;
         }
 
-
+        const svg = d3.select("svg");
+        const nodeRadius = 12.75;
+        let edgeGroup = svg.append("g");
+        let nodeGroup = svg.append("g");
+        let nodeMap = {};
 
         function updateLayout() {
-            const svgHeight = 800;
-            const svgWidth = 1000;
+            const svgHeight = 648;
+            const svgWidth = 810;
             const maxDepth = depth;
             const layerHeight = svgHeight / (maxDepth + 1);
+            const horizontalPadding = 90;
 
             // Only render nodes and edges up to currentLayer
-            const visibleNodes = tree.nodes;//.filter(n => n.depth <= currentLayer); //all visible for now? 
-            //const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
-            const visibleEdges = tree.edges;//.filter(e =>
-            //    visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target)
-            //);
+            const visibleNodes = tree.nodes.filter(n => n.depth <= currentLayer);
+            const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
+            const visibleEdges = tree.edges.filter(e =>
+                visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target)
+            );
 
             // Build hierarchy and apply tree layout
             const rootHierarchy = d3.hierarchy(buildHierarchy(visibleNodes));
-            const treeLayout = d3.tree().size([svgWidth - 200, 100]); // y ignored
+            const treeLayout = d3.tree().size([svgWidth - 2 * horizontalPadding, 100]); // y ignored
             treeLayout(rootHierarchy);
 
             nodeMap = {};
             rootHierarchy.descendants().forEach(d => {
                 const data = d.data;
-                data.x = d.x + 100;
+                data.x = d.x + horizontalPadding;
                 data.y = data.depth * layerHeight + 30;
                 nodeMap[data.id] = data;
             });
@@ -233,6 +304,8 @@
                     .attr("cy", d => nodeMap[d.id].y)
                     .style("opacity", 0) // hide on enter // hide on enter
                     .style("fill", "blue")//nodes that enter will appear blue!
+                    .on("mouseenter", handleNodeHover)
+                    .on("mouseleave", clearPathPreview)
                     .on("click", handleNodeClick),
                 update => update.transition().duration(500)
                     .attr("cx", d => nodeMap[d.id].x)
@@ -242,25 +315,27 @@
         }
 
 
-        function updateColors() {
-            //define all colors for nodes
-            nodeGroup.selectAll("circle")
-                .style("fill", d => {
-                    if (d.id === agentNode.id) return "green";
-                    if (leaves.has(d)) return "blue";
-                    return "yellow";
-                });
-
+        function updateGraph() {
             edgeGroup.selectAll("line")
                 .transition()
                 .duration(500)
                 .style("opacity", 1);
 
             nodeGroup.selectAll("circle")
+                .classed("clickable-node", d => d.depth === currentLayer)
                 .transition()
                 .duration(500)
                 .style("opacity", 1)
-                ;
+                .style("fill", d => {
+                    if (d.id === agentNode.id) return "green";
+                    if (d.depth < currentLayer) return "yellow";
+                    if (d.depth === currentLayer) return "blue";
+                    return "none";
+                });
+
+            if (currentLayer == depth + 1) {
+                setTimeout(() => { showOverlay(); }, 1000);
+            }
             //layoutAndRender(); // teh fact that layout render was called was overwriting the node colors!!
         }
 
@@ -310,64 +385,11 @@
             return fromPath.concat([lca]).concat(toPath);
         }
 
-        function randomLeaf() {
-            //samples a leaf at random
-            const items = Array.from(leaves);
-            const randomItem = items[Math.floor(Math.random() * items.length)];
-            return randomItem;
-        }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        async function addLeaves() {
-            //This function deletes and adds new leaves, this until the moment when agentNode is removed from the tree
-            //An alternative animation option would be to animate everything sequentially
-            if (leaves.size == 1) {//means only one node was left (necessarily on last layer)
-                console.log("congrats");
-                return;
-            }
-
-            do {
-                const leaf1 = randomLeaf();
-                leaves.delete(leaf1);
-                const leaf2 = randomLeaf();
-                leaves.delete(leaf2);
-                if (leaf2.depth != depth - 1) {
-                    //create two new leaves
-                    let node1 = { id: nodeId++, depth: leaf2.depth + 1, parent: leaf2.id };
-                    let node2 = { id: nodeId++, depth: leaf2.depth + 1, parent: leaf2.id };
-                    leaves.add(node1);
-                    leaves.add(node2);
-                    tree.nodes.push(node1);
-                    tree.nodes.push(node2);
-                    tree.edges.push({ source: leaf2.id, target: node1.id, depthParent: leaf2.depth });
-                    tree.edges.push({ source: leaf2.id, target: node2.id, depthParent: leaf2.depth });
-                    /*
-                    //in case we wan to have animations for new edges
-                    updateLayout();
-                    await sleep(1000);
-                    updateColors();
-                    // Sleep for 1 second (1000 ms)
-                    await sleep(2000);
-                    console.log("slept"); //==> using await 
-                    */
-                } else {
-                    let node1 = { id: nodeId++, depth: leaf2.depth + 1, parent: leaf2.id };
-                    leaves.clear()//no more leaves except node1
-                    leaves.add(node1)
-                    tree.nodes.push(node1);
-                    tree.edges.push({ source: leaf2.id, target: node1.id, depthParent: leaf2.depth });
-                }
-            } while (leaves.has(agentNode));
-        }
-
         function handleNodeClick(event, d) {
-            //event is the DOM event object
-            //d is the data bound to the evend (i.e., the node)
-            if (!leaves.has(d)) { console.log("Clicked on non leaf node"); return; };
+            if (d.depth !== currentLayer) return;
 
+            clearPathPreview();
+            nodeGroup.selectAll("circle").classed("clickable-node", false);
             d3.select(event.currentTarget).style("fill", "green");
 
             const path = getPathBetween(agentNode, d);
@@ -376,20 +398,56 @@
             highlightPath(path);
             score += path.length - 1;
             document.getElementById("score").innerText = score;
+            animateCostUpdate();
             agentNode = d;
-
+            currentLayer++;
             //Updates the layout, while not revealing the last layer (to avoid that edges or nodes would enter at wrong place)
-            addLeaves()
             updateLayout();
 
             // Defer apparition of new nodes and edges
             setTimeout(() => {
-                updateColors();
-                if (agentNode.depth === depth) {
+                updateGraph();
+                if (currentLayer === depth + 1) {
                     setTimeout(showOverlay, 1000);
                 }
             }, 1000);
         }
+
+        function handleNodeHover(event, d) {
+            if (d.depth !== currentLayer) return;
+
+            const path = getPathBetween(agentNode, d);
+            if (!path) return;
+
+            showPathPreview(path);
+        }
+
+        function showPathPreview(path) {
+            clearPathPreview();
+
+            const pathEdges = [];
+            for (let i = 0; i < path.length - 1; i++) {
+                pathEdges.push({ source: path[i].id, target: path[i + 1].id });
+            }
+
+            const lines = edgeGroup.selectAll("line");
+            pathEdges.forEach(pe => {
+                lines.filter(d => (d.source === pe.source && d.target === pe.target) || (d.source === pe.target && d.target === pe.source))
+                    .classed("preview-highlight", true);
+            });
+        }
+
+        function clearPathPreview() {
+            edgeGroup.selectAll("line").classed("preview-highlight", false);
+        }
+
+        function animateCostUpdate() {
+            const costDisplay = document.querySelector(".score-display");
+            costDisplay.classList.remove("cost-bump");
+            void costDisplay.offsetWidth;
+            costDisplay.classList.add("cost-bump");
+        }
+
         function highlightPath(path) {
             const pathEdges = [];
             for (let i = 0; i < path.length - 1; i++) {
@@ -407,10 +465,10 @@
             setTimeout(() => lines.classed("highlight", false), 1000);
         }
 
-        createTree(width, depth);
-        agentNode = tree.nodes[0];
+        agentNode = layers[0][0];
+        currentLayer = 1;
         updateLayout();
-        updateColors();
+        updateGraph();
     </script>
 </body>
 
