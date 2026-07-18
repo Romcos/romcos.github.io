@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS102 Multiple-Choice Quiz</title>
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #657181;
+      --line: #dfe6ec;
+      --paper: #ffffff;
+      --wash: #f4f7f9;
+      --navy: #20364a;
+      --teal: #0d7f7a;
+      --teal-soft: #dff5f1;
+      --amber: #b87416;
+      --amber-soft: #fff2d7;
+      --rose: #b63f4a;
+      --rose-soft: #ffe7ea;
+      --green: #22724c;
+      --green-soft: #e1f4ea;
+      --shadow: 0 24px 70px rgba(32, 54, 74, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--wash);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: minmax(250px, 320px) 1fr;
+      min-height: 100vh;
+    }
+
+    .visual-panel {
+      position: sticky;
+      top: 0;
+      display: flex;
+      min-height: 100vh;
+      padding: 28px;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgba(23, 33, 43, 0.24), rgba(23, 33, 43, 0.84)),
+        url("img/back1.jpg") center / cover;
+    }
+
+    .visual-content {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+    }
+
+    .course-mark {
+      width: fit-content;
+      padding: 9px 11px;
+      border: 1px solid rgba(255, 255, 255, 0.42);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .visual-title {
+      margin: 0;
+      max-width: 13ch;
+      font-size: clamp(2.2rem, 6vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .visual-meta {
+      display: grid;
+      gap: 10px;
+      font-size: 0.96rem;
+      color: rgba(255, 255, 255, 0.84);
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 24px;
+      padding: 28px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .title-block {
+      display: grid;
+      gap: 4px;
+    }
+
+    .eyebrow {
+      color: var(--teal);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 2.6vw, 2.45rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--navy);
+      font-size: 0.88rem;
+      font-weight: 750;
+      box-shadow: 0 8px 30px rgba(32, 54, 74, 0.05);
+    }
+
+    .quiz-layout {
+      display: grid;
+      grid-template-columns: minmax(210px, 280px) minmax(0, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+
+    .navigator,
+    .question-panel,
+    .summary-panel {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: var(--shadow);
+    }
+
+    .navigator {
+      position: sticky;
+      top: 24px;
+      overflow: hidden;
+    }
+
+    .nav-header {
+      display: grid;
+      gap: 12px;
+      padding: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .progress-line {
+      overflow: hidden;
+      height: 8px;
+      border-radius: 999px;
+      background: #e8edf2;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--teal);
+      transition: width 180ms ease;
+    }
+
+    .nav-stats {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 700;
+    }
+
+    .question-map {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      padding: 18px;
+    }
+
+    .map-button {
+      display: grid;
+      place-items: center;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.88rem;
+      font-weight: 800;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+    }
+
+    .map-button:hover {
+      transform: translateY(-1px);
+      border-color: #b7c8d7;
+      color: var(--navy);
+    }
+
+    .map-button.current {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .map-button.answered:not(.current) {
+      border-color: #9ed7cf;
+      background: var(--teal-soft);
+      color: #176d68;
+    }
+
+    .question-panel {
+      overflow: hidden;
+    }
+
+    .question-top {
+      display: grid;
+      gap: 14px;
+      padding: clamp(20px, 3vw, 34px);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .question-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 760;
+    }
+
+    .source {
+      color: var(--teal);
+    }
+
+    .question-text {
+      margin: 0;
+      max-width: 850px;
+      font-size: clamp(1.38rem, 2.2vw, 2.25rem);
+      line-height: 1.17;
+      letter-spacing: 0;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+      padding: clamp(18px, 3vw, 34px);
+    }
+
+    .option {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 14px;
+      align-items: center;
+      width: 100%;
+      min-height: 68px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background 150ms ease;
+    }
+
+    .option:hover {
+      transform: translateY(-1px);
+      border-color: #aabfd0;
+      box-shadow: 0 14px 35px rgba(32, 54, 74, 0.08);
+    }
+
+    .option.selected {
+      border-color: var(--teal);
+      background: var(--teal-soft);
+      box-shadow: inset 0 0 0 1px var(--teal);
+    }
+
+    .option-letter {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      margin-left: 12px;
+      border-radius: 8px;
+      background: #eef3f6;
+      color: var(--navy);
+      font-weight: 850;
+    }
+
+    .option.selected .option-letter {
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .option-text {
+      padding: 14px 16px 14px 0;
+      line-height: 1.35;
+      overflow-wrap: anywhere;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px clamp(18px, 3vw, 34px);
+      border-top: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      min-height: 42px;
+      padding: 0 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--navy);
+      cursor: pointer;
+      font-weight: 820;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-1px);
+      border-color: #aabfd0;
+    }
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    .btn.primary {
+      border-color: var(--navy);
+      background: var(--navy);
+      color: #fff;
+    }
+
+    .btn.finish {
+      border-color: var(--teal);
+      background: var(--teal);
+      color: #fff;
+    }
+
+    .summary-panel {
+      display: none;
+      overflow: hidden;
+    }
+
+    .summary-panel.active {
+      display: block;
+    }
+
+    .summary-hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 18px;
+      align-items: center;
+      padding: clamp(22px, 4vw, 42px);
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(135deg, rgba(13, 127, 122, 0.12), rgba(184, 116, 22, 0.11)),
+        #fff;
+    }
+
+    .summary-title {
+      display: grid;
+      gap: 8px;
+    }
+
+    .summary-title h2 {
+      margin: 0;
+      font-size: clamp(1.65rem, 3vw, 3rem);
+      letter-spacing: 0;
+    }
+
+    .summary-title p {
+      margin: 0;
+      color: var(--muted);
+      font-weight: 720;
+    }
+
+    .score-ring {
+      display: grid;
+      place-items: center;
+      width: clamp(120px, 16vw, 164px);
+      aspect-ratio: 1;
+      border: 10px solid var(--teal);
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 18px 50px rgba(13, 127, 122, 0.18);
+    }
+
+    .score-ring strong {
+      font-size: clamp(1.9rem, 4vw, 3.1rem);
+      letter-spacing: 0;
+    }
+
+    .score-ring span {
+      color: var(--muted);
+      font-size: 0.86rem;
+      font-weight: 760;
+    }
+
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      padding: 18px clamp(18px, 3vw, 34px);
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 15px;
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .stat strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 1.65rem;
+      letter-spacing: 0;
+    }
+
+    .review-list {
+      display: grid;
+      gap: 12px;
+      padding: clamp(18px, 3vw, 34px);
+    }
+
+    .review-item {
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--green);
+      border-radius: 8px;
+      background: #fff;
+      padding: 16px;
+    }
+
+    .review-item.incorrect {
+      border-left-color: var(--rose);
+      background: linear-gradient(90deg, var(--rose-soft), #fff 22%);
+    }
+
+    .review-item.correct {
+      background: linear-gradient(90deg, var(--green-soft), #fff 22%);
+    }
+
+    .review-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .result-tag {
+      border-radius: 8px;
+      padding: 5px 8px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+
+    .result-tag.correct {
+      background: var(--green-soft);
+      color: var(--green);
+    }
+
+    .result-tag.incorrect {
+      background: var(--rose-soft);
+      color: var(--rose);
+    }
+
+    .review-question {
+      margin: 0;
+      font-weight: 820;
+      line-height: 1.35;
+    }
+
+    .review-answer {
+      display: grid;
+      gap: 4px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .review-answer strong {
+      color: var(--ink);
+    }
+
+    .summary-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      padding: 18px clamp(18px, 3vw, 34px);
+      border-top: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .visual-panel {
+        position: relative;
+        min-height: 280px;
+      }
+
+      .visual-title {
+        max-width: none;
+      }
+
+      .quiz-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .navigator {
+        position: relative;
+        top: auto;
+      }
+
+      .question-map {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 680px) {
+      .workspace {
+        padding: 18px;
+      }
+
+      .topbar,
+      .summary-hero {
+        align-items: stretch;
+        grid-template-columns: 1fr;
+        flex-direction: column;
+      }
+
+      .status-strip {
+        justify-content: flex-start;
+      }
+
+      .question-map {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+      }
+
+      .option {
+        grid-template-columns: 38px 1fr;
+      }
+
+      .actions,
+      .summary-actions {
+        flex-direction: column;
+      }
+
+      .action-group,
+      .btn {
+        width: 100%;
+      }
+
+      .summary-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <aside class="visual-panel" aria-label="Course quiz">
+      <div class="visual-content">
+        <div class="course-mark">CSCI-UA 102</div>
+        <h1 class="visual-title">Data Structures Quiz</h1>
+        <div class="visual-meta">
+          <span id="visual-count">Loading questions</span>
+          <span>Multiple-choice review</span>
+        </div>
+      </div>
+    </aside>
+
+    <section class="workspace">
+      <header class="topbar">
+        <div class="title-block">
+          <span class="eyebrow">Semester Review</span>
+          <h1>CS102 Multiple-Choice Quiz</h1>
+        </div>
+        <div class="status-strip" aria-live="polite">
+          <span class="pill" id="answered-pill">Loading</span>
+          <span class="pill" id="remaining-pill">cs102-quiz-data.json</span>
+        </div>
+      </header>
+
+      <div class="quiz-layout" id="quiz-layout">
+        <nav class="navigator" aria-label="Question navigation">
+          <div class="nav-header">
+            <div class="progress-line" aria-hidden="true">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+            <div class="nav-stats">
+              <span id="progress-text">Question 1 of 48</span>
+              <span id="completion-text">0%</span>
+            </div>
+          </div>
+          <div class="question-map" id="question-map"></div>
+        </nav>
+
+        <article class="question-panel" id="question-panel">
+          <div class="question-top">
+            <div class="question-meta">
+              <span class="source" id="source-label"></span>
+              <span id="question-position"></span>
+            </div>
+            <p class="question-text" id="question-text"></p>
+          </div>
+          <div class="options" id="options"></div>
+          <div class="actions">
+            <button class="btn" type="button" id="prev-button">Previous</button>
+            <div class="action-group">
+              <button class="btn primary" type="button" id="next-button">Next</button>
+              <button class="btn finish" type="button" id="finish-button">Finish</button>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <article class="summary-panel" id="summary-panel" aria-live="polite">
+        <div class="summary-hero">
+          <div class="summary-title">
+            <span class="eyebrow">Quiz Summary</span>
+            <h2 id="summary-heading">Results</h2>
+            <p id="summary-copy"></p>
+          </div>
+          <div class="score-ring" aria-label="Final score">
+            <div>
+              <strong id="score-percent">0%</strong>
+              <span id="score-fraction">0 of 0</span>
+            </div>
+          </div>
+        </div>
+        <div class="summary-stats">
+          <div class="stat">
+            <span>Correct</span>
+            <strong id="correct-count">0</strong>
+          </div>
+          <div class="stat">
+            <span>Incorrect</span>
+            <strong id="incorrect-count">0</strong>
+          </div>
+          <div class="stat">
+            <span>Answered</span>
+            <strong id="answered-count">0</strong>
+          </div>
+        </div>
+        <div class="review-list" id="review-list"></div>
+        <div class="summary-actions">
+          <button class="btn" type="button" id="review-button">Back to Questions</button>
+          <button class="btn primary" type="button" id="restart-button">Restart</button>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <script>
+    const DATA_URL = "cs102-quiz-data.json";
+    let questions = [];
+    const answers = new Map();
+    let currentIndex = 0;
+
+    const refs = {
+      visualCount: document.getElementById("visual-count"),
+      answeredPill: document.getElementById("answered-pill"),
+      remainingPill: document.getElementById("remaining-pill"),
+      progressFill: document.getElementById("progress-fill"),
+      progressText: document.getElementById("progress-text"),
+      completionText: document.getElementById("completion-text"),
+      questionMap: document.getElementById("question-map"),
+      sourceLabel: document.getElementById("source-label"),
+      questionPosition: document.getElementById("question-position"),
+      questionText: document.getElementById("question-text"),
+      options: document.getElementById("options"),
+      prevButton: document.getElementById("prev-button"),
+      nextButton: document.getElementById("next-button"),
+      finishButton: document.getElementById("finish-button"),
+      quizLayout: document.getElementById("quiz-layout"),
+      questionPanel: document.getElementById("question-panel"),
+      summaryPanel: document.getElementById("summary-panel"),
+      summaryHeading: document.getElementById("summary-heading"),
+      summaryCopy: document.getElementById("summary-copy"),
+      scorePercent: document.getElementById("score-percent"),
+      scoreFraction: document.getElementById("score-fraction"),
+      correctCount: document.getElementById("correct-count"),
+      incorrectCount: document.getElementById("incorrect-count"),
+      answeredCount: document.getElementById("answered-count"),
+      reviewList: document.getElementById("review-list"),
+      reviewButton: document.getElementById("review-button"),
+      restartButton: document.getElementById("restart-button")
+    };
+
+    loadQuiz();
+
+    async function loadQuiz() {
+      try {
+        const response = await fetch(DATA_URL, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Could not load ${DATA_URL}: ${response.status}`);
+        }
+        const payload = await response.json();
+        questions = normalizeQuestions(payload.questions);
+        validateQuestions(questions);
+        init(payload);
+      } catch (error) {
+        showLoadError(error);
+      }
+    }
+
+    function normalizeQuestions(rawQuestions) {
+      if (!Array.isArray(rawQuestions)) return [];
+      return rawQuestions.map((question, index) => ({
+        ...question,
+        id: Number.isInteger(question.id) ? question.id : index,
+        choices: Array.isArray(question.choices) ? question.choices : []
+      }));
+    }
+
+    function validateQuestions(questionList) {
+      if (!questionList.length) {
+        throw new Error("Quiz data does not contain any questions.");
+      }
+
+      const malformed = questionList.find((question) => {
+        const answerIds = new Set(question.choices.map((choice) => choice.id));
+        return !question.text || !question.source || !question.section || question.choices.length !== 4 || !answerIds.has(question.answer);
+      });
+
+      if (malformed) {
+        throw new Error(`Question ${malformed.id + 1} is missing text, source, choices, or a valid answer.`);
+      }
+    }
+
+    function showLoadError(error) {
+      refs.visualCount.textContent = "Quiz data unavailable";
+      refs.answeredPill.textContent = "Data not loaded";
+      refs.remainingPill.textContent = DATA_URL;
+      refs.progressText.textContent = "Unable to start";
+      refs.completionText.textContent = "0%";
+      refs.progressFill.style.width = "0%";
+      refs.sourceLabel.textContent = "Unable to load quiz data";
+      refs.questionPosition.textContent = DATA_URL;
+      refs.questionText.textContent = "The quiz shell loaded, but the JSON question file could not be loaded. Serve this folder through a local web server or GitHub Pages, then open cs102-quiz.html again.";
+      refs.options.innerHTML = `<div class="pill">${error.message}</div>`;
+      refs.questionMap.innerHTML = "";
+      refs.prevButton.disabled = true;
+      refs.nextButton.disabled = true;
+      refs.finishButton.disabled = true;
+    }
+
+    function init(payload) {
+      if (payload.title) document.title = payload.title;
+      refs.visualCount.textContent = `${questions.length} questions`;
+      renderMap();
+      bindEvents();
+      renderQuestion();
+    }
+
+    function bindEvents() {
+      refs.prevButton.addEventListener("click", () => {
+        currentIndex = Math.max(0, currentIndex - 1);
+        renderQuestion();
+      });
+
+      refs.nextButton.addEventListener("click", () => {
+        currentIndex = Math.min(questions.length - 1, currentIndex + 1);
+        renderQuestion();
+      });
+
+      refs.finishButton.addEventListener("click", showSummary);
+
+      refs.reviewButton.addEventListener("click", () => {
+        refs.summaryPanel.classList.remove("active");
+        refs.quizLayout.style.display = "";
+        renderQuestion();
+      });
+
+      refs.restartButton.addEventListener("click", () => {
+        answers.clear();
+        currentIndex = 0;
+        refs.summaryPanel.classList.remove("active");
+        refs.quizLayout.style.display = "";
+        renderQuestion();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    function renderMap() {
+      refs.questionMap.innerHTML = "";
+      questions.forEach((question, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "map-button";
+        button.textContent = index + 1;
+        button.setAttribute("aria-label", `Go to question ${index + 1}`);
+        button.addEventListener("click", () => {
+          currentIndex = index;
+          renderQuestion();
+        });
+        refs.questionMap.appendChild(button);
+      });
+    }
+
+    function renderQuestion() {
+      const question = questions[currentIndex];
+      if (!question) return;
+
+      const selected = answers.get(question.id);
+      const answeredCount = answers.size;
+      const remaining = questions.length - answeredCount;
+      const percentComplete = Math.round((answeredCount / questions.length) * 100);
+
+      refs.answeredPill.textContent = `${answeredCount} answered`;
+      refs.remainingPill.textContent = `${remaining} remaining`;
+      refs.progressFill.style.width = `${percentComplete}%`;
+      refs.progressText.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+      refs.completionText.textContent = `${percentComplete}%`;
+      refs.sourceLabel.textContent = question.section;
+      refs.questionPosition.textContent = question.source;
+      refs.questionText.textContent = question.text;
+
+      refs.options.innerHTML = "";
+      question.choices.forEach((choice) => {
+        const option = document.createElement("button");
+        option.type = "button";
+        option.className = `option${selected === choice.id ? " selected" : ""}`;
+        option.setAttribute("aria-pressed", selected === choice.id ? "true" : "false");
+        option.innerHTML = `
+          <span class="option-letter">${choice.id}</span>
+          <span class="option-text"></span>
+        `;
+        option.querySelector(".option-text").textContent = choice.text;
+        option.addEventListener("click", () => {
+          answers.set(question.id, choice.id);
+          renderQuestion();
+        });
+        refs.options.appendChild(option);
+      });
+
+      refs.prevButton.disabled = currentIndex === 0;
+      refs.nextButton.disabled = currentIndex === questions.length - 1;
+      refs.finishButton.disabled = answers.size !== questions.length;
+      updateMap();
+    }
+
+    function updateMap() {
+      const buttons = refs.questionMap.querySelectorAll(".map-button");
+      buttons.forEach((button, index) => {
+        const question = questions[index];
+        button.classList.toggle("current", index === currentIndex);
+        button.classList.toggle("answered", answers.has(question.id));
+      });
+    }
+
+    function showSummary() {
+      const results = questions.map((question) => {
+        const selected = answers.get(question.id);
+        const correctChoice = question.choices.find((choice) => choice.id === question.answer);
+        const selectedChoice = question.choices.find((choice) => choice.id === selected);
+        return {
+          question,
+          selected,
+          correctChoice,
+          selectedChoice,
+          isCorrect: selected === question.answer
+        };
+      });
+
+      const correct = results.filter((result) => result.isCorrect).length;
+      const incorrect = questions.length - correct;
+      const percent = Math.round((correct / questions.length) * 100);
+
+      refs.quizLayout.style.display = "none";
+      refs.summaryPanel.classList.add("active");
+      refs.summaryHeading.textContent = summaryTitle(percent);
+      refs.summaryCopy.textContent = `${correct} correct and ${incorrect} incorrect across ${questions.length} questions.`;
+      refs.scorePercent.textContent = `${percent}%`;
+      refs.scoreFraction.textContent = `${correct} of ${questions.length}`;
+      refs.correctCount.textContent = correct;
+      refs.incorrectCount.textContent = incorrect;
+      refs.answeredCount.textContent = answers.size;
+
+      refs.reviewList.innerHTML = "";
+      results.forEach((result, index) => {
+        const item = document.createElement("section");
+        item.className = `review-item ${result.isCorrect ? "correct" : "incorrect"}`;
+        const selectedText = result.selectedChoice ? `${result.selected}. ${result.selectedChoice.text}` : "No answer";
+        item.innerHTML = `
+          <div class="review-meta">
+            <span>${index + 1}. ${result.question.section}</span>
+            <span class="result-tag ${result.isCorrect ? "correct" : "incorrect"}">${result.isCorrect ? "Correct" : "Incorrect"}</span>
+          </div>
+          <p class="review-question"></p>
+          <p class="review-answer">
+            <span><strong>Your answer:</strong> <span class="selected-answer"></span></span>
+            <span><strong>Correct answer:</strong> <span class="correct-answer"></span></span>
+          </p>
+        `;
+        item.querySelector(".review-question").textContent = result.question.text;
+        item.querySelector(".selected-answer").textContent = selectedText;
+        item.querySelector(".correct-answer").textContent = `${result.question.answer}. ${result.correctChoice.text}`;
+        refs.reviewList.appendChild(item);
+      });
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function summaryTitle(percent) {
+      if (percent >= 90) return "Excellent work";
+      if (percent >= 75) return "Strong result";
+      if (percent >= 60) return "Good progress";
+      return "Review recommended";
+    }
+  </script>
+
+</body>
+</html>

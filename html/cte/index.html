@@ -89,6 +89,13 @@
       cursor: pointer;
     }
 
+    .playPauseButton {
+      min-width: 36px;
+      padding: 4px 9px;
+      line-height: 1;
+      font-size: 16px;
+    }
+
     canvas {
       border: 1px solid #ddd;
       margin-top: 12px;
@@ -259,6 +266,7 @@
           Exploration Algorithm
           <select id="algo">
             <option value="random_dfs">Random DFS</option>
+            <option value="random_walk">Random Walk (RW)</option>
             <option value="cte">CTE</option>
             <option value="lga3">LGA (v3)</option>
             <option value="opt">2OPT</option>
@@ -301,6 +309,8 @@
           <summary>Algorithms</summary>
           <p>
             <b>Random DFS</b> independent DFSs with random tie-breaking. No-communication.<br />
+            <b>Random Walk (RW)</b> independent random walks. Each agent chooses a uniformly random neighboring
+            cell at every step. No communication.<br />
             <b>CTE</b> Greedy algorithm. Agents go to nearest unfinished subtree. Accelerated version (using complete
             communications). <br />
             <b>LGA</b> Locally greedy v3: reanchor with shared anchor counts.<br />
@@ -339,7 +349,11 @@
       </div>
 
       <div id="globalSpeedPanel" class="panel">
-        <div class="small">All speeds</div>
+        <div class="row" style="justify-content:space-between; gap:10px;">
+          <div class="small">All speeds</div>
+          <button id="playPause" class="playPauseButton" type="button" aria-label="Pause exploration"
+            aria-pressed="false" title="Pause exploration">&#10074;&#10074;</button>
+        </div>
         <div class="row" style="align-items:center; gap:10px;">
           <input id="allSpeed" type="range" min="0" max="99" step="1" value="20" />
           <span id="allSpeedVal" class="pill">20 / s</span>
@@ -1094,6 +1108,34 @@
           this.current = this.stack[this.stack.length - 1];
           movesCount++;
         }
+      }
+    }
+
+    // =========================
+    // Random Walk Agent
+    // =========================
+    class RandomWalkAgent {
+      constructor(id, colorHex, maze, startIndex, speed = 120) {
+        this.id = id;
+        this.colorHex = colorHex;
+        this.colorRgb = hexToRgb(colorHex);
+        this.maze = maze;
+        this.speed = speed;
+        this.budget = 0;
+        this.current = startIndex;
+        this.done = false;
+      }
+
+      stepOnce() {
+        const neighbors = this.maze.openNeighbors(this.current);
+        if (neighbors.length === 0) {
+          this.done = true;
+          return;
+        }
+
+        this.current = neighbors[randInt(neighbors.length)];
+        movesCount++;
+        claimCell(this.id, this.current);
       }
     }
 
@@ -2057,6 +2099,7 @@
     const allSpeedVal = document.getElementById("allSpeedVal");
     const btnGenerate = document.getElementById("generate");
     const btnRestart = document.getElementById("restart");
+    const btnPlayPause = document.getElementById("playPause");
     const agentCountInput = document.getElementById("agentCount");
     const agentsPanel = document.getElementById("agentsPanel");
     const canvas = document.getElementById("canvas");
@@ -2084,6 +2127,22 @@
     const timerValEl = document.getElementById("timerVal");
     let timerRunning = false;
     let timerElapsed = 0; // milliseconds
+    let explorationPaused = false;
+
+    function setExplorationPaused(paused) {
+      explorationPaused = paused;
+      if (!btnPlayPause) return;
+      btnPlayPause.innerHTML = paused ? "&#9654;" : "&#10074;&#10074;";
+      btnPlayPause.setAttribute("aria-pressed", String(paused));
+      btnPlayPause.setAttribute("aria-label", paused ? "Resume exploration" : "Pause exploration");
+      btnPlayPause.title = paused ? "Resume exploration" : "Pause exploration";
+    }
+
+    if (btnPlayPause) {
+      btnPlayPause.addEventListener("click", () => {
+        setExplorationPaused(!explorationPaused);
+      });
+    }
 
     // CTE-only shared + rooted tree
     let cteTree = null;     // { parent, children, order }
@@ -2381,6 +2440,19 @@
           claimCell(a.id, start);
           agents.push(a);
         }
+      } else if (algo === "random_walk") {
+        cteTree = null;
+        cteShared = null;
+        lgaSharedVisited = null;
+        lgaAnchorCounts = null;
+
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[i % PALETTE.length];
+          const speed = prevSpeeds[i] ?? 20;
+          const a = new RandomWalkAgent(i, color, maze, start, speed);
+          claimCell(a.id, start);
+          agents.push(a);
+        }
       } else {
         // random dfs (local)
         cteTree = null;
@@ -2543,7 +2615,7 @@
       }
 
       // update timer (dt is in seconds)
-      if (timerRunning) {
+      if (timerRunning && !explorationPaused) {
         timerElapsed += dt * 1000;
       }
 
@@ -2572,7 +2644,7 @@
         }
       }
 
-      if (maze && agents.length > 0 && !allDone()) {
+      if (maze && agents.length > 0 && !explorationPaused && !allDone()) {
         const maxStepsPerFramePerAgent = 2500;
 
         for (const a of agents) {

@@ -1,0 +1,1207 @@
+{
+  "title": "CS102 Multiple-Choice Quiz",
+  "course": "CSCI-UA 102",
+  "description": "Multiple-choice review questions generated from one semester of CS102 slide files.",
+  "questions": [
+    {
+      "id": 0,
+      "source": "01-course_intro.html",
+      "section": "Course Intro",
+      "text": "Why do the slides emphasize understanding data structures even when AI can generate code?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Because AI tools cannot compile Java programs"
+        },
+        {
+          "id": "B",
+          "text": "Because debugging, adapting, testing, and choosing data structures require understanding"
+        },
+        {
+          "id": "C",
+          "text": "Because data structures are only useful in interviews"
+        },
+        {
+          "id": "D",
+          "text": "Because generated code is always slower than handwritten code"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 1,
+      "source": "01-course_intro.html",
+      "section": "Course Intro",
+      "text": "Which pairing best describes the relationship between a data structure and an algorithm?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "A data structure stores or organizes data; an algorithm is a procedure for solving a problem"
+        },
+        {
+          "id": "B",
+          "text": "A data structure is Java-specific; an algorithm is language-independent"
+        },
+        {
+          "id": "C",
+          "text": "A data structure is always faster than an algorithm"
+        },
+        {
+          "id": "D",
+          "text": "A data structure is a loop; an algorithm is a class"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 2,
+      "source": "01-course_intro.html",
+      "section": "Course Intro",
+      "text": "In the string-building demo, why is StringBuilder much faster than repeatedly concatenating String objects?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "StringBuilder automatically sorts characters"
+        },
+        {
+          "id": "B",
+          "text": "StringBuilder avoids repeatedly creating and copying immutable String objects"
+        },
+        {
+          "id": "C",
+          "text": "StringBuilder stores characters in the call stack only"
+        },
+        {
+          "id": "D",
+          "text": "StringBuilder uses recursion instead of iteration"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 3,
+      "source": "02-java-memory.html",
+      "section": "Java Programs Under the Hood",
+      "text": "What does the Java compiler produce from a .java source file?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Machine-specific executable code"
+        },
+        {
+          "id": "B",
+          "text": "Java bytecode in a .class file"
+        },
+        {
+          "id": "C",
+          "text": "A heap snapshot"
+        },
+        {
+          "id": "D",
+          "text": "A JVM installation"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 4,
+      "source": "02-java-memory.html",
+      "section": "Java Programs Under the Hood",
+      "text": "What is stored in a primitive variable's memory location?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "The actual value of the variable"
+        },
+        {
+          "id": "B",
+          "text": "A pointer to the source file"
+        },
+        {
+          "id": "C",
+          "text": "A reference to an object on the heap"
+        },
+        {
+          "id": "D",
+          "text": "The name of the variable as text"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 5,
+      "source": "02-java-memory.html",
+      "section": "Java Programs Under the Hood",
+      "text": "Where are Java arrays stored?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Always on the call stack"
+        },
+        {
+          "id": "B",
+          "text": "Always in the source file"
+        },
+        {
+          "id": "C",
+          "text": "On the heap, in consecutive memory locations"
+        },
+        {
+          "id": "D",
+          "text": "In bytecode, not memory"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 6,
+      "source": "02-recursion.html",
+      "section": "Recursion",
+      "text": "What is the base case in a recursive algorithm?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "The step that makes the problem larger"
+        },
+        {
+          "id": "B",
+          "text": "The trivial case that can be solved directly"
+        },
+        {
+          "id": "C",
+          "text": "The final line of the source file"
+        },
+        {
+          "id": "D",
+          "text": "The stack frame of the caller"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 7,
+      "source": "02-recursion.html",
+      "section": "Recursion",
+      "text": "In the recursive factorial function shown in the slides, what is the recursive call for factorial(n) when n > 0?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "factorial(n + 1)"
+        },
+        {
+          "id": "B",
+          "text": "factorial(0)"
+        },
+        {
+          "id": "C",
+          "text": "factorial(n - 1)"
+        },
+        {
+          "id": "D",
+          "text": "factorial(n * n)"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 8,
+      "source": "02-recursion.html",
+      "section": "Recursion",
+      "text": "Which statement about recursion and iteration matches the slides?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Any problem solved recursively can also be solved iteratively, and vice versa"
+        },
+        {
+          "id": "B",
+          "text": "Recursive algorithms never use memory"
+        },
+        {
+          "id": "C",
+          "text": "Recursive implementations are always faster than iterative ones"
+        },
+        {
+          "id": "D",
+          "text": "Iteration cannot be used for linked lists"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 9,
+      "source": "03-data_structures_overview_1.html",
+      "section": "Data Structures and Algorithms Overview",
+      "text": "Why is binary search asymptotically faster than linear search on sorted data?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "It checks every element twice"
+        },
+        {
+          "id": "B",
+          "text": "It repeatedly halves the remaining search space"
+        },
+        {
+          "id": "C",
+          "text": "It stores data in a linked list"
+        },
+        {
+          "id": "D",
+          "text": "It avoids comparisons entirely"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 10,
+      "source": "03-data_structures_overview_1.html",
+      "section": "Data Structures and Algorithms Overview",
+      "text": "What is the time complexity of accessing an element by index in an array?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "O(1)"
+        },
+        {
+          "id": "B",
+          "text": "O(log N)"
+        },
+        {
+          "id": "C",
+          "text": "O(N)"
+        },
+        {
+          "id": "D",
+          "text": "O(N^2)"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 11,
+      "source": "03-data_structures_overview_1.html",
+      "section": "Data Structures and Algorithms Overview",
+      "text": "Why is binary search generally not efficient on a linked list?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Linked lists cannot store sorted data"
+        },
+        {
+          "id": "B",
+          "text": "Linked lists cannot contain numbers"
+        },
+        {
+          "id": "C",
+          "text": "Accessing an arbitrary middle element takes linear time"
+        },
+        {
+          "id": "D",
+          "text": "Linked lists must be circular"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 12,
+      "source": "03-lists_1.html",
+      "section": "Lists Part 1",
+      "text": "What is an abstract data type (ADT)?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "A precise specification of values and operations, independent of implementation"
+        },
+        {
+          "id": "B",
+          "text": "A Java class that must use arrays"
+        },
+        {
+          "id": "C",
+          "text": "A data type that cannot be implemented"
+        },
+        {
+          "id": "D",
+          "text": "A method for drawing memory diagrams"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 13,
+      "source": "03-lists_1.html",
+      "section": "Lists Part 1",
+      "text": "In a singly linked list with a tail reference, what is the time complexity of adding to the back?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "O(1)"
+        },
+        {
+          "id": "B",
+          "text": "O(log N)"
+        },
+        {
+          "id": "C",
+          "text": "O(N)"
+        },
+        {
+          "id": "D",
+          "text": "O(N^2)"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 14,
+      "source": "03-lists_1.html",
+      "section": "Lists Part 1",
+      "text": "Why does searching a linked list take O(N) time in the worst case?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "The list must be resized first"
+        },
+        {
+          "id": "B",
+          "text": "Each node may need to be visited one at a time"
+        },
+        {
+          "id": "C",
+          "text": "Every node stores two values"
+        },
+        {
+          "id": "D",
+          "text": "The list is always unsorted"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 15,
+      "source": "04-lists_2.html",
+      "section": "Doubly Linked Lists",
+      "text": "What extra reference does each node in a doubly linked list usually store compared with a singly linked list?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "A reference to the array capacity"
+        },
+        {
+          "id": "B",
+          "text": "A reference to the previous node"
+        },
+        {
+          "id": "C",
+          "text": "A reference to the JVM stack frame"
+        },
+        {
+          "id": "D",
+          "text": "A reference to the list's hash code"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 16,
+      "source": "04-lists_2.html",
+      "section": "Doubly Linked Lists",
+      "text": "Why is using an iterator preferable to repeated get(i) calls when traversing a linked list?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Iterators sort the list while traversing"
+        },
+        {
+          "id": "B",
+          "text": "Iterators can visit each node once in O(N) time"
+        },
+        {
+          "id": "C",
+          "text": "Iterators convert the list into an array first"
+        },
+        {
+          "id": "D",
+          "text": "Iterators avoid storing references"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 17,
+      "source": "04-lists_2.html",
+      "section": "Doubly Linked Lists",
+      "text": "In a circular linked list, what makes the list circular?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "The first node stores the list size"
+        },
+        {
+          "id": "B",
+          "text": "The last node's next reference points back to the first node"
+        },
+        {
+          "id": "C",
+          "text": "Every node stores a duplicate value"
+        },
+        {
+          "id": "D",
+          "text": "The list cannot be empty"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 18,
+      "source": "04-lists_arraylist.html",
+      "section": "ArrayList",
+      "text": "What is the difference between an ArrayList's size and capacity?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Size is the array length; capacity is the number of stored elements"
+        },
+        {
+          "id": "B",
+          "text": "Size is the number of stored elements; capacity is the length of the underlying array"
+        },
+        {
+          "id": "C",
+          "text": "They are always equal"
+        },
+        {
+          "id": "D",
+          "text": "Capacity counts only non-null values after index 0"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 19,
+      "source": "04-lists_arraylist.html",
+      "section": "ArrayList",
+      "text": "What is the amortized time complexity of appending to an ArrayList when the backing array grows by multiplication?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "O(1)"
+        },
+        {
+          "id": "B",
+          "text": "O(log N)"
+        },
+        {
+          "id": "C",
+          "text": "O(N)"
+        },
+        {
+          "id": "D",
+          "text": "O(N^2)"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 20,
+      "source": "04-lists_arraylist.html",
+      "section": "ArrayList",
+      "text": "Why is adding or removing at an arbitrary position in an ArrayList usually O(N)?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Elements may need to be shifted to preserve order"
+        },
+        {
+          "id": "B",
+          "text": "Java must recompile the class"
+        },
+        {
+          "id": "C",
+          "text": "The list must be converted into a linked list"
+        },
+        {
+          "id": "D",
+          "text": "The hash code must be recomputed for every element"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 21,
+      "source": "05-stacks_queues.html",
+      "section": "Stacks and Queues",
+      "text": "Which access rule describes a stack?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "First in, first out"
+        },
+        {
+          "id": "B",
+          "text": "Last in, first out"
+        },
+        {
+          "id": "C",
+          "text": "Random access by index"
+        },
+        {
+          "id": "D",
+          "text": "Highest priority first"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 22,
+      "source": "05-stacks_queues.html",
+      "section": "Stacks and Queues",
+      "text": "Which access rule describes a queue?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "First in, first out"
+        },
+        {
+          "id": "B",
+          "text": "Last in, first out"
+        },
+        {
+          "id": "C",
+          "text": "Smallest key first"
+        },
+        {
+          "id": "D",
+          "text": "Left child before right child"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 23,
+      "source": "05-stacks_queues.html",
+      "section": "Stacks and Queues",
+      "text": "Why do circular-array queue implementations use modulo arithmetic?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "To sort queue elements"
+        },
+        {
+          "id": "B",
+          "text": "To wrap front and rear indexes back to the beginning of the array"
+        },
+        {
+          "id": "C",
+          "text": "To detect duplicate values"
+        },
+        {
+          "id": "D",
+          "text": "To convert a queue into a stack"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 24,
+      "source": "06-arithmetic_expression.html",
+      "section": "Arithmetic Expressions and Problem Solving",
+      "text": "Why is a stack useful for validating expressions with multiple types of brackets?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "It remembers the most recent unmatched opening bracket"
+        },
+        {
+          "id": "B",
+          "text": "It converts every bracket into an integer"
+        },
+        {
+          "id": "C",
+          "text": "It sorts the brackets alphabetically"
+        },
+        {
+          "id": "D",
+          "text": "It guarantees the expression has no operators"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 25,
+      "source": "06-arithmetic_expression.html",
+      "section": "Arithmetic Expressions and Problem Solving",
+      "text": "In postfix notation, where does the operator appear?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Before its operands"
+        },
+        {
+          "id": "B",
+          "text": "Between its operands"
+        },
+        {
+          "id": "C",
+          "text": "After its operands"
+        },
+        {
+          "id": "D",
+          "text": "On a separate line from its operands"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 26,
+      "source": "06-arithmetic_expression.html",
+      "section": "Arithmetic Expressions and Problem Solving",
+      "text": "What is the purpose of Dijkstra's Shunting Yard algorithm in these slides?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "To convert infix expressions to postfix notation"
+        },
+        {
+          "id": "B",
+          "text": "To balance an AVL tree"
+        },
+        {
+          "id": "C",
+          "text": "To resize an array queue"
+        },
+        {
+          "id": "D",
+          "text": "To find connected components in a graph"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 27,
+      "source": "06-trees.html",
+      "section": "Trees Introduction",
+      "text": "How is the height of a tree defined in the slides?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "The number of leaves in the tree"
+        },
+        {
+          "id": "B",
+          "text": "The height of the root, calculated from leaves upward"
+        },
+        {
+          "id": "C",
+          "text": "The number of edges in the entire graph"
+        },
+        {
+          "id": "D",
+          "text": "The number of children of the root"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 28,
+      "source": "06-trees.html",
+      "section": "Trees Introduction",
+      "text": "What order does an inorder traversal of a binary tree use?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Node, left subtree, right subtree"
+        },
+        {
+          "id": "B",
+          "text": "Left subtree, right subtree, node"
+        },
+        {
+          "id": "C",
+          "text": "Left subtree, node, right subtree"
+        },
+        {
+          "id": "D",
+          "text": "Right subtree, node, left subtree, left subtree again"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 29,
+      "source": "06-trees.html",
+      "section": "Trees Introduction",
+      "text": "What data structure does the iterative tree-size algorithm in the slides use to remember unexplored nodes?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "A stack"
+        },
+        {
+          "id": "B",
+          "text": "A hash table"
+        },
+        {
+          "id": "C",
+          "text": "A sorted array"
+        },
+        {
+          "id": "D",
+          "text": "A priority queue"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 30,
+      "source": "07-bst.html",
+      "section": "Binary Search Trees",
+      "text": "What property must hold at every node in a binary search tree?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "All values in the left subtree are smaller, and all values in the right subtree are larger"
+        },
+        {
+          "id": "B",
+          "text": "Every node has exactly two children"
+        },
+        {
+          "id": "C",
+          "text": "All leaves must be at the same depth"
+        },
+        {
+          "id": "D",
+          "text": "The tree must be stored in an array"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 31,
+      "source": "07-bst.html",
+      "section": "Binary Search Trees",
+      "text": "What is the time complexity of find in a BST in terms of tree height H?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "O(1)"
+        },
+        {
+          "id": "B",
+          "text": "O(log H)"
+        },
+        {
+          "id": "C",
+          "text": "O(H)"
+        },
+        {
+          "id": "D",
+          "text": "O(N^2)"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 32,
+      "source": "07-bst.html",
+      "section": "Binary Search Trees",
+      "text": "When removing a BST node with two children, what value can replace it while preserving the BST property?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Any leaf in the tree"
+        },
+        {
+          "id": "B",
+          "text": "Its inorder predecessor or inorder successor"
+        },
+        {
+          "id": "C",
+          "text": "The root value, regardless of position"
+        },
+        {
+          "id": "D",
+          "text": "The first value inserted into the tree"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 33,
+      "source": "09-priority_queues.html",
+      "section": "Priority Queues",
+      "text": "How does dequeue() differ in a priority queue compared with a regular FIFO queue?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "It removes the oldest element"
+        },
+        {
+          "id": "B",
+          "text": "It removes the element with highest priority"
+        },
+        {
+          "id": "C",
+          "text": "It removes the newest element"
+        },
+        {
+          "id": "D",
+          "text": "It removes a random element"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 34,
+      "source": "09-priority_queues.html",
+      "section": "Priority Queues",
+      "text": "What two properties must a binary heap maintain?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Shape property and heap order property"
+        },
+        {
+          "id": "B",
+          "text": "BST property and AVL balance factor"
+        },
+        {
+          "id": "C",
+          "text": "Hash property and load factor"
+        },
+        {
+          "id": "D",
+          "text": "Inorder property and recursion property"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 35,
+      "source": "09-priority_queues.html",
+      "section": "Priority Queues",
+      "text": "Why are binary heaps commonly implemented using arrays?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Complete-tree structure lets parent and child positions be computed by index"
+        },
+        {
+          "id": "B",
+          "text": "Arrays prevent the need for comparisons"
+        },
+        {
+          "id": "C",
+          "text": "Arrays make every operation O(1) in the worst case"
+        },
+        {
+          "id": "D",
+          "text": "Arrays automatically remove duplicate priorities"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 36,
+      "source": "10-sorting.html",
+      "section": "Sorting",
+      "text": "Which sorting algorithms are described as quadratic sorts in the slides?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Merge sort, quick sort, and heap sort"
+        },
+        {
+          "id": "B",
+          "text": "Bubble sort, selection sort, and insertion sort"
+        },
+        {
+          "id": "C",
+          "text": "Binary search, DFS, and BFS"
+        },
+        {
+          "id": "D",
+          "text": "Hashing, chaining, and probing"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 37,
+      "source": "10-sorting.html",
+      "section": "Sorting",
+      "text": "Why does merge sort run in O(n log n) time?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Each level does O(n) merging work and there are O(log n) levels"
+        },
+        {
+          "id": "B",
+          "text": "It never compares values"
+        },
+        {
+          "id": "C",
+          "text": "It only works on arrays of size 2"
+        },
+        {
+          "id": "D",
+          "text": "It uses a hash table for every comparison"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 38,
+      "source": "10-sorting.html",
+      "section": "Sorting",
+      "text": "What can make quick sort deteriorate to O(n^2) time?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Choosing pivots that split the array very unevenly"
+        },
+        {
+          "id": "B",
+          "text": "Using recursion at all"
+        },
+        {
+          "id": "C",
+          "text": "Sorting integers rather than strings"
+        },
+        {
+          "id": "D",
+          "text": "Using a base case"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 39,
+      "source": "12-balanced-bst.html",
+      "section": "Balanced BST",
+      "text": "Why do we want a BST to remain balanced?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "To guarantee traversals take O(1) time"
+        },
+        {
+          "id": "B",
+          "text": "To keep find, add, and remove operations at O(log N) in the worst case"
+        },
+        {
+          "id": "C",
+          "text": "To make every node have two children"
+        },
+        {
+          "id": "D",
+          "text": "To avoid using comparisons"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 40,
+      "source": "12-balanced-bst.html",
+      "section": "Balanced BST",
+      "text": "What is the AVL tree balance requirement?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Every node must have balance factor exactly 0"
+        },
+        {
+          "id": "B",
+          "text": "The heights of the two subtrees of any node cannot differ by more than 1"
+        },
+        {
+          "id": "C",
+          "text": "The tree must be a complete binary tree"
+        },
+        {
+          "id": "D",
+          "text": "The root must always be the median of all inserted values"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 41,
+      "source": "12-balanced-bst.html",
+      "section": "Balanced BST",
+      "text": "What is the cost of one AVL rotation according to the slides?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "O(1)"
+        },
+        {
+          "id": "B",
+          "text": "O(log N)"
+        },
+        {
+          "id": "C",
+          "text": "O(N)"
+        },
+        {
+          "id": "D",
+          "text": "O(N log N)"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 42,
+      "source": "13-hashtables.html",
+      "section": "Hash Tables",
+      "text": "In a dictionary or map ADT, what is true about keys?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Keys must be stored in sorted order"
+        },
+        {
+          "id": "B",
+          "text": "Keys are unique, and each key maps to at most one value"
+        },
+        {
+          "id": "C",
+          "text": "Keys must be integers"
+        },
+        {
+          "id": "D",
+          "text": "Keys are removed automatically after lookup"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 43,
+      "source": "13-hashtables.html",
+      "section": "Hash Tables",
+      "text": "What is a hash collision?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "A key maps to an array index outside the table"
+        },
+        {
+          "id": "B",
+          "text": "Two different keys map to the same table index"
+        },
+        {
+          "id": "C",
+          "text": "A table has no empty cells"
+        },
+        {
+          "id": "D",
+          "text": "A value is larger than its key"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 44,
+      "source": "13-hashtables.html",
+      "section": "Hash Tables",
+      "text": "What does rehashing do when a hash table becomes too full?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Sorts keys alphabetically"
+        },
+        {
+          "id": "B",
+          "text": "Recomputes all stored positions for a larger table"
+        },
+        {
+          "id": "C",
+          "text": "Deletes all collisions"
+        },
+        {
+          "id": "D",
+          "text": "Converts all values into strings"
+        }
+      ],
+      "answer": "B"
+    },
+    {
+      "id": 45,
+      "source": "14-graphs.html",
+      "section": "Graphs Introduction",
+      "text": "What is a graph made of?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Vertices and edges"
+        },
+        {
+          "id": "B",
+          "text": "Only arrays and indexes"
+        },
+        {
+          "id": "C",
+          "text": "Stack frames and heap objects"
+        },
+        {
+          "id": "D",
+          "text": "Keys and values only"
+        }
+      ],
+      "answer": "A"
+    },
+    {
+      "id": 46,
+      "source": "14-graphs.html",
+      "section": "Graphs Introduction",
+      "text": "Which representation stores, for each node, a list of adjacent nodes?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "Edge list"
+        },
+        {
+          "id": "B",
+          "text": "Adjacency matrix"
+        },
+        {
+          "id": "C",
+          "text": "Adjacency list"
+        },
+        {
+          "id": "D",
+          "text": "Implicit heap"
+        }
+      ],
+      "answer": "C"
+    },
+    {
+      "id": 47,
+      "source": "14-graphs.html",
+      "section": "Graphs Introduction",
+      "text": "What is the main behavioral difference between DFS and BFS?",
+      "choices": [
+        {
+          "id": "A",
+          "text": "DFS follows paths deeply before backtracking; BFS visits nodes by increasing distance from the start"
+        },
+        {
+          "id": "B",
+          "text": "DFS only works on weighted graphs; BFS only works on trees"
+        },
+        {
+          "id": "C",
+          "text": "DFS requires an adjacency matrix; BFS requires an edge list"
+        },
+        {
+          "id": "D",
+          "text": "DFS is O(1); BFS is O(N^2) for all graphs"
+        }
+      ],
+      "answer": "A"
+    }
+  ]
+}
