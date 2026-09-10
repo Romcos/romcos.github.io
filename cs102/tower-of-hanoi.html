@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tower of Hanoi · CS102</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 40px 16px;
+      background: #f4f7f9;
+      color: #17212b;
+      font-family: system-ui, sans-serif;
+      line-height: 1.5;
+    }
+
+    main { max-width: 880px; margin: auto; }
+    .course { color: #0d7f7a; font-weight: 700; }
+    h1 { margin: 8px 0; font-size: clamp(2rem, 6vw, 3rem); }
+    .instructions { max-width: 640px; color: #526171; }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 28px 0;
+    }
+
+    button, select { font: inherit; }
+    select, #restart {
+      min-height: 44px;
+      padding: 8px 16px;
+      border: 1px solid #bac7d0;
+      border-radius: 6px;
+      background: white;
+      color: #17212b;
+      cursor: pointer;
+    }
+
+    #restart { background: #20364a; color: white; border-color: #20364a; }
+    button:focus-visible, select:focus-visible { outline: 3px solid #0d7f7a; outline-offset: 4px; }
+
+    .board { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .tower {
+      min-width: 0;
+      padding: 12px 8px;
+      border: 2px solid #dfe6ec;
+      border-radius: 8px;
+      background: white;
+      color: inherit;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .tower:hover:enabled { border-color: #0d7f7a; }
+    .tower[aria-pressed="true"] { border-color: #0d7f7a; background: #eaf7f4; }
+    .tower:disabled { cursor: default; opacity: 1; }
+    .stand { display: block; position: relative; height: 280px; margin-bottom: 12px; }
+    .stand::before {
+      content: "";
+      position: absolute;
+      bottom: 8px;
+      left: calc(50% - 4px);
+      width: 8px;
+      height: 250px;
+      border-radius: 4px 4px 0 0;
+      background: #c7d2da;
+    }
+
+    .stand::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: #20364a;
+    }
+
+    .stack {
+      position: absolute;
+      bottom: 8px;
+      width: 100%;
+      display: flex;
+      flex-direction: column-reverse;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .disc {
+      display: block;
+      height: 26px;
+      border-radius: 5px;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 26px;
+    }
+
+    .tower[aria-pressed="true"] .disc:last-child { transform: translateY(-6px); outline: 2px solid #17212b; }
+    .tower-name { font-weight: 700; }
+    .tower-role { display: block; color: #526171; font-size: 0.85rem; }
+    .feedback { margin-top: 24px; }
+    #status { min-height: 3em; margin: 8px 0; }
+
+    @media (max-width: 480px) {
+      body { padding: 24px 12px; }
+      .board { gap: 6px; }
+      .tower { padding: 10px 4px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="course">CS102 · Recursion</div>
+    <h1>Tower of Hanoi</h1>
+    <p class="instructions">Move all the discs from tower A to tower C. Move only the top disc, one at a time. A larger disc cannot go on a smaller disc.</p>
+
+    <div class="controls">
+      <label for="disc-count">Number of discs</label>
+      <select id="disc-count">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3" selected>3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+      </select>
+      <button id="restart" type="button">Start over</button>
+    </div>
+
+    <div class="board" role="group" aria-label="Tower of Hanoi game">
+      <button class="tower" type="button" aria-pressed="false">
+        <span class="stand" aria-hidden="true"><span class="stack"></span></span>
+        <span class="tower-name">A</span><span class="tower-role">Start</span>
+      </button>
+      <button class="tower" type="button" aria-pressed="false">
+        <span class="stand" aria-hidden="true"><span class="stack"></span></span>
+        <span class="tower-name">B</span><span class="tower-role">Spare</span>
+      </button>
+      <button class="tower" type="button" aria-pressed="false">
+        <span class="stand" aria-hidden="true"><span class="stack"></span></span>
+        <span class="tower-name">C</span><span class="tower-role">Goal</span>
+      </button>
+    </div>
+
+    <div class="feedback">
+      <strong>Moves: <span id="moves">0</span></strong>
+      <p id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+    </div>
+    <noscript>Please enable JavaScript to play.</noscript>
+  </main>
+
+  <script>
+    const discCountSelect = document.getElementById('disc-count');
+    const towerButtons = [...document.querySelectorAll('.tower')];
+    const status = document.getElementById('status');
+    const movesLabel = document.getElementById('moves');
+    const names = ['A', 'B', 'C'];
+    const colors = ['#0d7f7a', '#3068ad', '#8051ab', '#b34566', '#ad5c1d', '#67752a', '#406276', '#68594e'];
+    let towers;
+    let discCount;
+    let selectedTower;
+    let moves;
+
+    function startGame() {
+      discCount = Number(discCountSelect.value);
+      // Each array stores discs from bottom to top; the last item is movable.
+      towers = [Array.from({ length: discCount }, (_, i) => discCount - i), [], []];
+      selectedTower = null;
+      moves = 0;
+      render('Click a tower to select its top disc, then click a destination tower.');
+    }
+
+    function render(message) {
+      towerButtons.forEach((button, index) => {
+        const stack = button.querySelector('.stack');
+        stack.replaceChildren();
+        towers[index].forEach(size => {
+          const disc = document.createElement('span');
+          disc.className = 'disc';
+          disc.textContent = size;
+          disc.style.width = `${30 + (size / discCount) * 60}%`;
+          disc.style.backgroundColor = colors[size - 1];
+          stack.append(disc);
+        });
+        const top = towers[index].at(-1);
+        button.setAttribute('aria-label', `Tower ${names[index]}, ${towers[index].length} discs${top ? `, top disc ${top}` : ', empty'}`);
+        button.setAttribute('aria-pressed', String(selectedTower === index));
+        button.disabled = towers[2].length === discCount;
+      });
+      movesLabel.textContent = moves;
+      status.textContent = message;
+    }
+
+    function chooseTower(index) {
+      if (towers[2].length === discCount) return;
+
+      if (selectedTower === null) {
+        if (towers[index].length === 0) {
+          render('That tower is empty. Choose a tower with a disc.');
+          return;
+        }
+        selectedTower = index;
+        render(`Disc ${towers[index].at(-1)} selected. Click a destination, or click this tower again to cancel.`);
+        return;
+      }
+
+      if (selectedTower === index) {
+        selectedTower = null;
+        render('Selection cancelled. Choose a tower to select its top disc.');
+        return;
+      }
+
+      const disc = towers[selectedTower].at(-1);
+      const destinationTop = towers[index].at(-1);
+      if (destinationTop !== undefined && disc > destinationTop) {
+        render('A larger disc cannot go on a smaller disc. Choose another destination.');
+        return;
+      }
+
+      towers[index].push(towers[selectedTower].pop());
+      selectedTower = null;
+      moves += 1;
+      render(towers[2].length === discCount
+        ? `Solved! You moved all ${discCount} ${discCount === 1 ? 'disc' : 'discs'} to tower C in ${moves} ${moves === 1 ? 'move' : 'moves'}.`
+        : `Moved disc ${disc} to tower ${names[index]}. Choose your next disc.`);
+    }
+
+    towerButtons.forEach((button, index) => button.addEventListener('click', () => chooseTower(index)));
+    discCountSelect.addEventListener('change', startGame);
+    document.getElementById('restart').addEventListener('click', startGame);
+    startGame();
+  </script>
+</body>
+</html>
