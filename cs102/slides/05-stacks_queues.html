@@ -1,13 +1,15 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Stacks and Queues</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 
-    <link href="css/slides.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
-    <textarea id="source">
+<head>
+  <title>Stacks and Queues</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+  <link href="css/slides.css" rel="stylesheet" type="text/css" />
+</head>
+
+<body>
+  <textarea id="source">
 
 class: center, middle, title-slide
 
@@ -406,11 +408,11 @@ public class LinkedStack<E> implements Stack<E> {
 
 --
 
-- Two possible implementations:
-
-  - __iterative__: use a stack to store the elements of the list as you traverse it, then pop the elements from the stack and print them
+- Solutions:
 
   - __recursive__: recursively print the rest of the list, then print the first element
+
+  - __iterative__: use a stack to store the elements of the list as you traverse it, then pop the elements from the stack and print them
 
 --
 - Trace the execution of both implementations on the list [1, 2, 3].
@@ -428,7 +430,7 @@ public class LinkedStack<E> implements Stack<E> {
 - Code here is assumed to be within the LinkedList<E> class
 
 ```java
-public void printReverse() { 
+public void printReverseWithRecursion() { 
     printReverseRec(head);
 }
 
@@ -440,7 +442,7 @@ private void printReverseRec(Node node) { // recursive helper method
 ```
 
 ```java
-public void printReverse2() { // Imperative
+public void printReverseWithAStack() { // Imperative
     Stack<E> stack = new ArrayStack<E>();
     for (Node cur = head; cur != null; cur = cur.next) {
         stack.push(cur);
@@ -1191,31 +1193,34 @@ implementations and reference-based implementations.
 
 
     </textarea>
-     <script src="js/remark.js" type="text/javascript">
-    </script>
-    <script src="js/remark_conf.js" type="text/javascript">
-    </script>
+  <script src="js/remark.js" type="text/javascript">
+  </script>
+  <script src="js/remark_conf.js" type="text/javascript">
+  </script>
 
 
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured" type="text/javascript"></script>
-        <script type="text/javascript">
-          var slideshow = remark.create();
+  <script
+    src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS_HTML&delayStartupUntil=configured"
+    type="text/javascript"></script>
+  <script type="text/javascript">
+    var slideshow = remark.create();
 
-          // Setup MathJax
-          MathJax.Hub.Config({
-              tex2jax: {
-              skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
-                inlineMath: [ ['$','$'], ["\\(","\\)"] ],
-                displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
-                processEscapes: true
-              }
-          });
+    // Setup MathJax
+    MathJax.Hub.Config({
+      tex2jax: {
+        skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+        inlineMath: [['$', '$'], ["\\(", "\\)"]],
+        displayMath: [['$$', '$$'], ["\\[", "\\]"]],
+        processEscapes: true
+      }
+    });
 
-          MathJax.Hub.Configured();
-        </script>
+    MathJax.Hub.Configured();
+  </script>
 
 
 
-  </body>
+</body>
+
 </html>

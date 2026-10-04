@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html>
-  <head>
+
+<head>
     <title>Lists</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
     <link href="css/slides.css" rel="stylesheet" type="text/css" />
-  </head>
-  <body>
+</head>
+
+<body>
     <textarea id="source">
 
 class: center, middle, title-slide
@@ -175,7 +177,7 @@ public interface List<E> {
 ## Java's own List ADT
 
 Java provides its own [`List` interface](https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/List.html)
-that is implemented by several built in classes, among them the `ArrayList<E>` class.
+that is implemented by several built in classes, among them the `ArrayList<E>` class. Here is the [Source code](https://github.com/openjdk/jdk11u/blob/master/src/java.base/share/classes/java/util/List.java) 
 
 ---
 template: section
@@ -1153,7 +1155,7 @@ public int find (E it) {
 
     //stop if we reach the end or find it
     while (current != null
-            && !cureent.data.euals(it)) {
+            && !current.data.equals(it)) {
         current = current.next;
         counter++;  //we just passed a node
     }
@@ -1181,7 +1183,7 @@ public int find (E it) {
 
     //stop if we reach the end or find it
     while (current != null
-            && !cureent.data.euals(it)) {
+            && !current.data.equals(it)) {
         current = current.next;
         counter++;  //we just passed a node
     }
@@ -1805,10 +1807,11 @@ to test your add function without at least a minimal class to represent these nu
 
 
     </textarea>
-     <script src="js/remark.js" type="text/javascript">
+    <script src="js/remark.js" type="text/javascript">
     </script>
     <script src="js/remark_conf.js" type="text/javascript">
     </script>
 
-  </body>
+</body>
+
 </html>
