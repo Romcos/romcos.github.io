@@ -35,6 +35,59 @@ a:hover {
     text-align: center;
 }
 
+.illustrations > div {
+    min-width: 0;
+}
+
+.illustrations > div > a {
+    position: relative;
+    width: 100%;
+    border-radius: 8px;
+    transition: box-shadow 160ms ease;
+}
+
+.illustrations > div > a::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: rgba(33, 37, 41, 0.04);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+}
+
+@media (hover: hover) {
+    .illustrations > div > a:hover {
+        box-shadow: 0 5px 16px rgba(33, 37, 41, 0.16);
+    }
+
+    .illustrations > div > a:hover::after {
+        opacity: 1;
+    }
+}
+
+.illustrations > div > a:focus-visible {
+    outline: 2px solid #007bff;
+    outline-offset: 3px;
+    box-shadow: 0 5px 16px rgba(33, 37, 41, 0.16);
+}
+
+.illustrations > div > a:focus-visible::after {
+    opacity: 1;
+}
+
+.illustrations img {
+    object-fit: contain;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .illustrations > div > a,
+    .illustrations > div > a::after {
+        transition: none;
+    }
+}
+
 p {
     margin-top: 0;
     margin-bottom: 1rem;

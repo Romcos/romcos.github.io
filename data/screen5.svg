@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 440" width="440" height="440" role="img" aria-labelledby="title desc">
+    <title id="title">Tree mining</title>
+    <desc id="desc">Twelve miners distributed across five leaves of a branching tree.</desc>
+    <rect width="440" height="440" fill="#fff"/>
+    <g fill="none" stroke="#b3bdb1" stroke-width="3" stroke-linecap="round">
+        <path d="M220 48 C220 99 120 99 120 150"/>
+        <path d="M220 48 C220 99 320 99 320 150"/>
+        <path d="M120 150 C120 214 58 214 58 278"/>
+        <path d="M120 150 C120 214 156 214 156 278"/>
+        <path d="M320 150 C320 190 258 190 258 230"/>
+        <path d="M320 150 C320 238 366 238 366 326"/>
+        <path d="M258 230 C258 286 232 286 232 342"/>
+        <path d="M258 230 C258 286 296 286 296 342"/>
+    </g>
+    <circle cx="220" cy="48" r="7" fill="#71826f"/>
+    <g fill="#fff" stroke="#9ca99c" stroke-width="2.5">
+        <circle cx="120" cy="150" r="6"/>
+        <circle cx="320" cy="150" r="6"/>
+        <circle cx="258" cy="230" r="6"/>
+    </g>
+    <g fill="#f8f9f6" stroke="#426b59" stroke-width="3">
+        <circle cx="58" cy="278" r="8"/>
+        <circle cx="156" cy="278" r="8"/>
+        <circle cx="232" cy="342" r="8"/>
+        <circle cx="296" cy="342" r="8"/>
+        <circle cx="366" cy="326" r="8"/>
+    </g>
+    <g fill="#446b57" stroke="#fff" stroke-width="2">
+        <circle cx="43" cy="303" r="6"/>
+        <circle cx="58" cy="303" r="6"/>
+        <circle cx="73" cy="303" r="6"/>
+        <circle cx="141" cy="303" r="6"/>
+        <circle cx="156" cy="303" r="6"/>
+        <circle cx="171" cy="303" r="6"/>
+        <circle cx="224" cy="367" r="6"/>
+        <circle cx="240" cy="367" r="6"/>
+        <circle cx="288" cy="367" r="6"/>
+        <circle cx="304" cy="367" r="6"/>
+        <circle cx="358" cy="351" r="6"/>
+        <circle cx="374" cy="351" r="6"/>
+    </g>
+</svg>
